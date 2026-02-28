@@ -61,7 +61,9 @@ async def update_recipe(mealie_url: str, token: str, slug: str, payload: dict) -
         return resp.json()
 
 
-async def upload_hero_image(mealie_url: str, token: str, recipe_id: str, image_bytes: bytes) -> None:
+async def upload_hero_image(
+    mealie_url: str, token: str, recipe_id: str, image_bytes: bytes
+) -> None:
     """Upload hero image to Mealie."""
     async with httpx.AsyncClient() as client:
         resp = await client.put(
@@ -137,14 +139,25 @@ def build_recipe_payload(
         "recipeIngredient": ingredients,
         "recipeInstructions": instructions,
         "nutrition": {
-            "calories": None, "carbohydrateContent": None, "cholesterolContent": None,
-            "fatContent": None, "fiberContent": None, "proteinContent": None,
-            "saturatedFatContent": None, "sodiumContent": None, "sugarContent": None,
-            "transFatContent": None, "unsaturatedFatContent": None,
+            "calories": None,
+            "carbohydrateContent": None,
+            "cholesterolContent": None,
+            "fatContent": None,
+            "fiberContent": None,
+            "proteinContent": None,
+            "saturatedFatContent": None,
+            "sodiumContent": None,
+            "sugarContent": None,
+            "transFatContent": None,
+            "unsaturatedFatContent": None,
         },
         "settings": {
-            "public": False, "showNutrition": False, "showAssets": False,
-            "landscapeView": False, "disableComments": False, "locked": False,
+            "public": False,
+            "showNutrition": False,
+            "showAssets": False,
+            "landscapeView": False,
+            "disableComments": False,
+            "locked": False,
         },
         "assets": [],
         "notes": notes,

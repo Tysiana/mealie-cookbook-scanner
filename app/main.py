@@ -23,6 +23,7 @@ app = FastAPI()
 
 # --- Config ---
 
+
 class ConfigPayload(BaseModel):
     mealie_url: str
     mealie_token: str
@@ -50,16 +51,19 @@ async def save_config(payload: ConfigPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Could not connect to Mealie: {e}")
 
-    cfg.save_config({
-        "mealie_url": mealie_url,
-        "mealie_token": payload.mealie_token,
-        "anthropic_key": payload.anthropic_key,
-        **uuids,
-    })
+    cfg.save_config(
+        {
+            "mealie_url": mealie_url,
+            "mealie_token": payload.mealie_token,
+            "anthropic_key": payload.anthropic_key,
+            **uuids,
+        }
+    )
     return {"ok": True}
 
 
 # --- OCR ---
+
 
 @app.post("/api/ocr")
 async def ocr(file: UploadFile = File(...)):
@@ -72,6 +76,7 @@ async def ocr(file: UploadFile = File(...)):
 
 
 # --- Structure via Claude ---
+
 
 class StructurePayload(BaseModel):
     text: str
@@ -90,6 +95,7 @@ async def structure(payload: StructurePayload):
 
 
 # --- Import to Mealie ---
+
 
 @app.post("/api/import")
 async def import_recipe(
@@ -136,7 +142,11 @@ async def import_recipe(
             await upload_hero_image(mealie_url, token, recipe_id, webp_bytes)
         except Exception as e:
             # Non-fatal — recipe was saved, just no image
-            return {"slug": slug, "recipe_id": recipe_id, "warning": f"Image upload failed: {e}"}
+            return {
+                "slug": slug,
+                "recipe_id": recipe_id,
+                "warning": f"Image upload failed: {e}",
+            }
 
     return {"slug": slug, "recipe_id": recipe_id}
 

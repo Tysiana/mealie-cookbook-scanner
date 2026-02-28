@@ -22,6 +22,12 @@ def is_configured() -> bool:
     config = load_config()
     if not config:
         return False
-    required = ["mealie_url", "mealie_token", "anthropic_key",
-                "mealie_user_id", "mealie_household_id", "mealie_group_id"]
+    required = [
+        "mealie_url",
+        "mealie_token",
+        "anthropic_key",
+        "mealie_user_id",
+        "mealie_household_id",
+        "mealie_group_id",
+    ]
     return all(config.get(k) for k in required)

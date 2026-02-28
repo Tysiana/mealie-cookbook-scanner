@@ -1,573 +1,860 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mealie Cookbook Scanner</title>
-  <style>
-    :root {
-      --bg:           #0f1117;
-      --surface:      #1a1d27;
-      --surface2:     #22263a;
-      --border:       #2e3350;
-      --accent:       #5c8a6e;
-      --accent-light: #7ab090;
-      --accent-hover: #4a7059;
-      --text:         #e8eaf0;
-      --muted:        #8a8fa8;
-      --danger:       #e05c5c;
-      --warn:         #e0a85c;
-      --radius:       10px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mealie Cookbook Scanner</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --surface2: #22263a;
+        --border: #2e3350;
+        --accent: #5c8a6e;
+        --accent-light: #7ab090;
+        --accent-hover: #4a7059;
+        --text: #e8eaf0;
+        --muted: #8a8fa8;
+        --danger: #e05c5c;
+        --warn: #e0a85c;
+        --radius: 10px;
+      }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
 
-    /* ---- Header ---- */
-    header {
-      width: 100%;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent-light); }
-    .logo span { color: var(--muted); font-weight: 400; }
-    .config-link {
-      font-size: 0.8rem;
-      color: var(--muted);
-      cursor: pointer;
-      background: none;
-      border: none;
-      text-decoration: underline;
-    }
-    .config-link:hover { color: var(--text); }
+      /* ---- Header ---- */
+      header {
+        width: 100%;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .logo {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent-light);
+      }
+      .logo span {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .config-link {
+        font-size: 0.8rem;
+        color: var(--muted);
+        cursor: pointer;
+        background: none;
+        border: none;
+        text-decoration: underline;
+      }
+      .config-link:hover {
+        color: var(--text);
+      }
 
-    /* ---- Layout ---- */
-    .container { width: 100%; max-width: 660px; padding: 28px 16px 48px; }
+      /* ---- Layout ---- */
+      .container {
+        width: 100%;
+        max-width: 660px;
+        padding: 28px 16px 48px;
+      }
 
-    /* ---- Views ---- */
-    .view { display: none; }
-    .view.active { display: block; }
+      /* ---- Views ---- */
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
 
-    /* ---- Card ---- */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      margin-bottom: 14px;
-    }
-    .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
-    .card .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 20px; line-height: 1.4; }
+      /* ---- Card ---- */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 14px;
+      }
+      .card h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .card .sub {
+        color: var(--muted);
+        font-size: 0.875rem;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
 
-    /* ---- Forms ---- */
-    .field { margin-bottom: 16px; }
-    label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
-    input[type="text"], input[type="url"], input[type="password"], textarea {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 14px;
-      color: var(--text);
-      font-size: 0.95rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input:focus, textarea:focus { border-color: var(--accent); }
-    textarea { resize: vertical; min-height: 220px; line-height: 1.6; }
+      /* ---- Forms ---- */
+      .field {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .hint {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      input[type="text"],
+      input[type="url"],
+      input[type="password"],
+      textarea {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px 14px;
+        color: var(--text);
+        font-size: 0.95rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      input:focus,
+      textarea:focus {
+        border-color: var(--accent);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 220px;
+        line-height: 1.6;
+      }
 
-    /* ---- Buttons ---- */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 11px 20px;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: background 0.15s, opacity 0.15s;
-      text-decoration: none;
-      font-family: inherit;
-    }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-primary  { background: var(--accent); color: #fff; }
-    .btn-primary:hover:not(:disabled)  { background: var(--accent-hover); }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover:not(:disabled) { background: var(--border); }
-    .btn-full { width: 100%; }
-    .btn-row { display: flex; gap: 8px; margin-top: 16px; }
-    .btn-row .btn-primary { flex: 1; }
+      /* ---- Buttons ---- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 20px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition:
+          background 0.15s,
+          opacity 0.15s;
+        text-decoration: none;
+        font-family: inherit;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+      .btn-secondary {
+        background: var(--surface2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background: var(--border);
+      }
+      .btn-full {
+        width: 100%;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .btn-row .btn-primary {
+        flex: 1;
+      }
 
-    /* ---- Upload zone ---- */
-    .upload-zone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 44px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative;
-    }
-    .upload-zone:hover, .upload-zone.drag-over {
-      border-color: var(--accent);
-      background: rgba(92,138,110,0.05);
-    }
-    .upload-zone input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-    }
-    .upload-icon { font-size: 2.8rem; margin-bottom: 10px; }
-    .upload-zone p { color: var(--muted); font-size: 0.9rem; }
-    .upload-zone strong { color: var(--accent-light); }
+      /* ---- Upload zone ---- */
+      .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 44px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        position: relative;
+      }
+      .upload-zone:hover,
+      .upload-zone.drag-over {
+        border-color: var(--accent);
+        background: rgba(92, 138, 110, 0.05);
+      }
+      .upload-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+      .upload-icon {
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+      }
+      .upload-zone p {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .upload-zone strong {
+        color: var(--accent-light);
+      }
 
-    /* ---- Camera button ---- */
-    .camera-btn {
-      width: 100%;
-      padding: 44px 20px;
-      background: var(--surface2);
-      border: 2px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      text-align: center;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative;
-    }
-    .camera-btn:hover { border-color: var(--accent); background: rgba(92,138,110,0.05); }
-    .camera-btn input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-    }
-    .camera-btn .cam-icon { font-size: 2.8rem; margin-bottom: 8px; }
-    .camera-btn .cam-title { font-size: 1.05rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-    .camera-btn .cam-sub { color: var(--muted); font-size: 0.85rem; }
-    .file-alt-row {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .file-alt-row label { display: inline; color: var(--accent-light); cursor: pointer; text-decoration: underline; }
+      /* ---- Camera button ---- */
+      .camera-btn {
+        width: 100%;
+        padding: 44px 20px;
+        background: var(--surface2);
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        text-align: center;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        position: relative;
+      }
+      .camera-btn:hover {
+        border-color: var(--accent);
+        background: rgba(92, 138, 110, 0.05);
+      }
+      .camera-btn input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+      .camera-btn .cam-icon {
+        font-size: 2.8rem;
+        margin-bottom: 8px;
+      }
+      .camera-btn .cam-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .camera-btn .cam-sub {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .file-alt-row {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .file-alt-row label {
+        display: inline;
+        color: var(--accent-light);
+        cursor: pointer;
+        text-decoration: underline;
+      }
 
-    /* ---- Steps ---- */
-    .steps {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 24px;
-      gap: 0;
-    }
-    .step { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--muted); }
-    .step.active { color: var(--accent-light); font-weight: 600; }
-    .step-num {
-      width: 24px; height: 24px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; font-weight: 700;
-      background: var(--surface2); border: 1px solid var(--border);
-    }
-    .step.active .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .step.done .step-num { background: var(--surface2); }
-    .step-line { width: 36px; height: 1px; background: var(--border); margin: 0 6px; }
+      /* ---- Steps ---- */
+      .steps {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        gap: 0;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .step.active {
+        color: var(--accent-light);
+        font-weight: 600;
+      }
+      .step-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+      }
+      .step.active .step-num {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .step.done .step-num {
+        background: var(--surface2);
+      }
+      .step-line {
+        width: 36px;
+        height: 1px;
+        background: var(--border);
+        margin: 0 6px;
+      }
 
-    /* ---- Hero tabs ---- */
-    .hero-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .hero-tab {
-      flex: 1;
-      padding: 10px 6px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.82rem;
-      color: var(--muted);
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-    .hero-tab:hover { border-color: var(--accent); color: var(--text); }
-    .hero-tab.active { border-color: var(--accent); background: rgba(92,138,110,0.15); color: var(--accent-light); font-weight: 600; }
-    .hero-panel { display: none; }
-    .hero-panel.active { display: block; }
+      /* ---- Hero tabs ---- */
+      .hero-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .hero-tab {
+        flex: 1;
+        padding: 10px 6px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.82rem;
+        color: var(--muted);
+        transition: all 0.15s;
+        font-family: inherit;
+      }
+      .hero-tab:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .hero-tab.active {
+        border-color: var(--accent);
+        background: rgba(92, 138, 110, 0.15);
+        color: var(--accent-light);
+        font-weight: 600;
+      }
+      .hero-panel {
+        display: none;
+      }
+      .hero-panel.active {
+        display: block;
+      }
 
-    /* ---- Canvas crop ---- */
-    .canvas-wrap {
-      position: relative;
-      border-radius: 6px;
-      overflow: hidden;
-      background: #000;
-      margin-bottom: 10px;
-      cursor: crosshair;
-      touch-action: none;
-    }
-    #cropCanvas { display: block; max-width: 100%; user-select: none; }
-    .crop-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 8px; }
+      /* ---- Canvas crop ---- */
+      .canvas-wrap {
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #000;
+        margin-bottom: 10px;
+        cursor: crosshair;
+        touch-action: none;
+      }
+      #cropCanvas {
+        display: block;
+        max-width: 100%;
+        user-select: none;
+      }
+      .crop-hint {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
 
-    /* ---- Preview image ---- */
-    .preview-img {
-      max-width: 100%;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      margin-top: 8px;
-      display: block;
-    }
-    .preview-label { font-size: 0.82rem; color: var(--accent-light); margin-top: 10px; margin-bottom: 4px; }
+      /* ---- Preview image ---- */
+      .preview-img {
+        max-width: 100%;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        margin-top: 8px;
+        display: block;
+      }
+      .preview-label {
+        font-size: 0.82rem;
+        color: var(--accent-light);
+        margin-top: 10px;
+        margin-bottom: 4px;
+      }
 
-    /* ---- Status / alerts ---- */
-    .alert {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 6px;
-      font-size: 0.88rem;
-      line-height: 1.4;
-      margin-top: 12px;
-    }
-    .alert-info { background: rgba(92,138,110,0.1); border: 1px solid rgba(92,138,110,0.3); }
-    .alert-error { background: rgba(224,92,92,0.1); border: 1px solid rgba(224,92,92,0.3); color: #f08080; }
-    .alert-warn { background: rgba(224,168,92,0.1); border: 1px solid rgba(224,168,92,0.3); color: #e0c07a; }
+      /* ---- Status / alerts ---- */
+      .alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        line-height: 1.4;
+        margin-top: 12px;
+      }
+      .alert-info {
+        background: rgba(92, 138, 110, 0.1);
+        border: 1px solid rgba(92, 138, 110, 0.3);
+      }
+      .alert-error {
+        background: rgba(224, 92, 92, 0.1);
+        border: 1px solid rgba(224, 92, 92, 0.3);
+        color: #f08080;
+      }
+      .alert-warn {
+        background: rgba(224, 168, 92, 0.1);
+        border: 1px solid rgba(224, 168, 92, 0.3);
+        color: #e0c07a;
+      }
 
-    /* ---- Spinner ---- */
-    .spinner {
-      width: 16px; height: 16px; flex-shrink: 0;
-      border: 2px solid rgba(255,255,255,0.15);
-      border-top-color: var(--accent-light);
-      border-radius: 50%;
-      animation: spin 0.65s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+      /* ---- Spinner ---- */
+      .spinner {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        border-top-color: var(--accent-light);
+        border-radius: 50%;
+        animation: spin 0.65s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-    /* ---- Progress ---- */
-    .progress-wrap { margin: 20px 0; }
-    .progress-bar {
-      width: 100%; height: 5px;
-      background: var(--surface2); border-radius: 3px; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%; background: var(--accent); border-radius: 3px;
-      transition: width 0.4s ease;
-    }
+      /* ---- Progress ---- */
+      .progress-wrap {
+        margin: 20px 0;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 5px;
+        background: var(--surface2);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+        transition: width 0.4s ease;
+      }
 
-    /* ---- Processing view ---- */
-    .processing-card {
-      text-align: center;
-      padding: 40px 24px;
-    }
-    .processing-card .big-icon { font-size: 2.5rem; margin-bottom: 16px; }
-    #processingSteps { text-align: left; margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+      /* ---- Processing view ---- */
+      .processing-card {
+        text-align: center;
+        padding: 40px 24px;
+      }
+      .processing-card .big-icon {
+        font-size: 2.5rem;
+        margin-bottom: 16px;
+      }
+      #processingSteps {
+        text-align: left;
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
 
-    /* ---- Success view ---- */
-    .success-card { text-align: center; padding: 36px 24px; }
-    .success-icon { font-size: 3.5rem; margin-bottom: 16px; }
-    .success-card h2 { margin-bottom: 6px; }
-    .success-card .sub { color: var(--muted); margin-bottom: 20px; }
-    .recipe-link {
-      display: block;
-      padding: 14px 20px;
-      background: var(--accent);
-      color: #fff;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      margin-bottom: 12px;
-      transition: background 0.15s;
-    }
-    .recipe-link:hover { background: var(--accent-hover); }
+      /* ---- Success view ---- */
+      .success-card {
+        text-align: center;
+        padding: 36px 24px;
+      }
+      .success-icon {
+        font-size: 3.5rem;
+        margin-bottom: 16px;
+      }
+      .success-card h2 {
+        margin-bottom: 6px;
+      }
+      .success-card .sub {
+        color: var(--muted);
+        margin-bottom: 20px;
+      }
+      .recipe-link {
+        display: block;
+        padding: 14px 20px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 12px;
+        transition: background 0.15s;
+      }
+      .recipe-link:hover {
+        background: var(--accent-hover);
+      }
 
-    /* ---- Responsive ---- */
-    @media (max-width: 480px) {
-      .container { padding: 16px 10px 40px; }
-      .card { padding: 18px; }
-      .hero-tabs { flex-direction: column; }
-      .steps { font-size: 0.75rem; }
-      .step-line { width: 24px; }
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <div class="logo">📖 Mealie <span>Cookbook Scanner</span></div>
-  <button class="config-link" id="reconfigBtn" style="display:none;" onclick="showReconfigure()">⚙ Reconfigure</button>
-</header>
-
-<div class="container">
-
-  <!-- ═══════════════════════════════════ CONFIG ═══════════════════════════════════ -->
-  <div class="view" id="view-config">
-    <div class="card">
-      <h2>Welcome — let's get set up</h2>
-      <p class="sub">Enter your Mealie and Anthropic details below. This only needs to be done once — they're saved to your server volume.</p>
-
-      <div class="field">
-        <label for="mealieUrl">Mealie URL</label>
-        <input type="url" id="mealieUrl" placeholder="http://192.168.1.x:9925" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="mealieToken">Mealie API Token</label>
-        <input type="password" id="mealieToken" placeholder="Your Mealie API token" autocomplete="off" />
-        <p class="hint">Profile → API Tokens → Create Token</p>
-      </div>
-      <div class="field">
-        <label for="anthropicKey">Anthropic API Key</label>
-        <input type="password" id="anthropicKey" placeholder="sk-ant-..." autocomplete="off" />
-      </div>
-
-      <div id="configMsg"></div>
-
-      <button class="btn btn-primary btn-full" id="saveConfigBtn" onclick="saveConfig()">
-        Save &amp; Connect
+      /* ---- Responsive ---- */
+      @media (max-width: 480px) {
+        .container {
+          padding: 16px 10px 40px;
+        }
+        .card {
+          padding: 18px;
+        }
+        .hero-tabs {
+          flex-direction: column;
+        }
+        .steps {
+          font-size: 0.75rem;
+        }
+        .step-line {
+          width: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">📖 Mealie <span>Cookbook Scanner</span></div>
+      <button
+        class="config-link"
+        id="reconfigBtn"
+        style="display: none"
+        onclick="showReconfigure()"
+      >
+        ⚙ Reconfigure
       </button>
-    </div>
-  </div>
+    </header>
 
-  <!-- ═══════════════════════════════════ UPLOAD ══════════════════════════════════ -->
-  <div class="view" id="view-upload">
+    <div class="container">
+      <!-- ═══════════════════════════════════ CONFIG ═══════════════════════════════════ -->
+      <div class="view" id="view-config">
+        <div class="card">
+          <h2>Welcome — let's get set up</h2>
+          <p class="sub">
+            Enter your Mealie and Anthropic details below. This only needs to be done once — they're
+            saved to your server volume.
+          </p>
 
-    <div class="steps">
-      <div class="step active" id="step1"><div class="step-num">1</div> Scan</div>
-      <div class="step-line"></div>
-      <div class="step" id="step2"><div class="step-num">2</div> Review</div>
-      <div class="step-line"></div>
-      <div class="step" id="step3"><div class="step-num">3</div> Hero image</div>
-    </div>
+          <div class="field">
+            <label for="mealieUrl">Mealie URL</label>
+            <input
+              type="url"
+              id="mealieUrl"
+              placeholder="http://192.168.1.x:9925"
+              autocomplete="off"
+            />
+          </div>
+          <div class="field">
+            <label for="mealieToken">Mealie API Token</label>
+            <input
+              type="password"
+              id="mealieToken"
+              placeholder="Your Mealie API token"
+              autocomplete="off"
+            />
+            <p class="hint">Profile → API Tokens → Create Token</p>
+          </div>
+          <div class="field">
+            <label for="anthropicKey">Anthropic API Key</label>
+            <input type="password" id="anthropicKey" placeholder="sk-ant-..." autocomplete="off" />
+          </div>
 
-    <!-- Panel 1: upload photo -->
-    <div id="panel-scan" class="card">
-      <h2>Scan a cookbook page</h2>
-      <p class="sub">Take a photo or upload an image of the recipe page. OCR runs locally — the image never leaves your server.</p>
-      <div id="uploadWidget"></div>
-      <div id="scanMsg"></div>
-    </div>
+          <div id="configMsg"></div>
 
-    <!-- Panel 2: review OCR text -->
-    <div id="panel-review" class="card" style="display:none;">
-      <h2>Review extracted text</h2>
-      <p class="sub">Fix any OCR mistakes before sending to Claude. Only this text is sent externally — not the image.</p>
-      <div class="field">
-        <textarea id="ocrText"></textarea>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-secondary" onclick="showPanel('scan')">← Back</button>
-        <button class="btn btn-primary" onclick="goToHero()">Looks good →</button>
-      </div>
-    </div>
-
-    <!-- Panel 3: hero image -->
-    <div id="panel-hero" class="card" style="display:none;">
-      <h2>Hero image <span style="color:var(--muted);font-weight:400;font-size:0.9rem;">(optional)</span></h2>
-      <p class="sub">Add a photo for this recipe in Mealie.</p>
-
-      <div class="hero-tabs">
-        <button class="hero-tab active" onclick="selectHeroTab('crop')">✂️ Crop from scan</button>
-        <button class="hero-tab"        onclick="selectHeroTab('upload')">📁 Upload photo</button>
-        <button class="hero-tab"        onclick="selectHeroTab('skip')">⏭ Skip</button>
-      </div>
-
-      <!-- Crop -->
-      <div class="hero-panel active" id="hero-crop">
-        <p class="crop-hint">Drag to select the food photo area on your scan, then click Crop.</p>
-        <div class="canvas-wrap" id="canvasWrap">
-          <canvas id="cropCanvas"></canvas>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn btn-secondary" onclick="clearCrop()">Clear</button>
-          <button class="btn btn-primary" style="flex:1;" id="cropBtn" disabled onclick="confirmCrop()">Crop selection</button>
-        </div>
-        <div id="cropPreview" style="display:none;">
-          <p class="preview-label">✓ Cropped hero image ready</p>
-          <img id="cropPreviewImg" class="preview-img" />
+          <button class="btn btn-primary btn-full" id="saveConfigBtn" onclick="saveConfig()">
+            Save &amp; Connect
+          </button>
         </div>
       </div>
 
-      <!-- Upload -->
-      <div class="hero-panel" id="hero-upload">
-        <div class="upload-zone" id="heroZone">
-          <input type="file" id="heroFileInput" accept="image/*" onchange="handleHeroFile(event)" />
-          <div class="upload-icon">🖼️</div>
-          <p><strong>Choose an image</strong></p>
-          <p>or drag and drop here</p>
+      <!-- ═══════════════════════════════════ UPLOAD ══════════════════════════════════ -->
+      <div class="view" id="view-upload">
+        <div class="steps">
+          <div class="step active" id="step1">
+            <div class="step-num">1</div>
+            Scan
+          </div>
+          <div class="step-line"></div>
+          <div class="step" id="step2">
+            <div class="step-num">2</div>
+            Review
+          </div>
+          <div class="step-line"></div>
+          <div class="step" id="step3">
+            <div class="step-num">3</div>
+            Hero image
+          </div>
         </div>
-        <div id="heroUploadPreview" style="display:none;">
-          <p class="preview-label">✓ Hero image ready</p>
-          <img id="heroUploadImg" class="preview-img" />
+
+        <!-- Panel 1: upload photo -->
+        <div id="panel-scan" class="card">
+          <h2>Scan a cookbook page</h2>
+          <p class="sub">
+            Take a photo or upload an image of the recipe page. OCR runs locally — the image never
+            leaves your server.
+          </p>
+          <div id="uploadWidget"></div>
+          <div id="scanMsg"></div>
+        </div>
+
+        <!-- Panel 2: review OCR text -->
+        <div id="panel-review" class="card" style="display: none">
+          <h2>Review extracted text</h2>
+          <p class="sub">
+            Fix any OCR mistakes before sending to Claude. Only this text is sent externally — not
+            the image.
+          </p>
+          <div class="field">
+            <textarea id="ocrText"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="showPanel('scan')">← Back</button>
+            <button class="btn btn-primary" onclick="goToHero()">Looks good →</button>
+          </div>
+        </div>
+
+        <!-- Panel 3: hero image -->
+        <div id="panel-hero" class="card" style="display: none">
+          <h2>
+            Hero image
+            <span style="color: var(--muted); font-weight: 400; font-size: 0.9rem">(optional)</span>
+          </h2>
+          <p class="sub">Add a photo for this recipe in Mealie.</p>
+
+          <div class="hero-tabs">
+            <button class="hero-tab active" onclick="selectHeroTab('crop')">
+              ✂️ Crop from scan
+            </button>
+            <button class="hero-tab" onclick="selectHeroTab('upload')">📁 Upload photo</button>
+            <button class="hero-tab" onclick="selectHeroTab('skip')">⏭ Skip</button>
+          </div>
+
+          <!-- Crop -->
+          <div class="hero-panel active" id="hero-crop">
+            <p class="crop-hint">
+              Drag to select the food photo area on your scan, then click Crop.
+            </p>
+            <div class="canvas-wrap" id="canvasWrap">
+              <canvas id="cropCanvas"></canvas>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px">
+              <button class="btn btn-secondary" onclick="clearCrop()">Clear</button>
+              <button
+                class="btn btn-primary"
+                style="flex: 1"
+                id="cropBtn"
+                disabled
+                onclick="confirmCrop()"
+              >
+                Crop selection
+              </button>
+            </div>
+            <div id="cropPreview" style="display: none">
+              <p class="preview-label">✓ Cropped hero image ready</p>
+              <img id="cropPreviewImg" class="preview-img" />
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <div class="hero-panel" id="hero-upload">
+            <div class="upload-zone" id="heroZone">
+              <input
+                type="file"
+                id="heroFileInput"
+                accept="image/*"
+                onchange="handleHeroFile(event)"
+              />
+              <div class="upload-icon">🖼️</div>
+              <p><strong>Choose an image</strong></p>
+              <p>or drag and drop here</p>
+            </div>
+            <div id="heroUploadPreview" style="display: none">
+              <p class="preview-label">✓ Hero image ready</p>
+              <img id="heroUploadImg" class="preview-img" />
+            </div>
+          </div>
+
+          <!-- Skip -->
+          <div class="hero-panel" id="hero-skip">
+            <p style="color: var(--muted); font-size: 0.9rem; padding: 16px 0">
+              The recipe will be saved without a photo. You can add one in Mealie later.
+            </p>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="showPanel('review')">← Back</button>
+            <button class="btn btn-primary" onclick="startImport()">Import to Mealie →</button>
+          </div>
+        </div>
+      </div>
+      <!-- /view-upload -->
+
+      <!-- ══════════════════════════════════ PROCESSING ═══════════════════════════════ -->
+      <div class="view" id="view-processing">
+        <div class="card processing-card">
+          <div class="big-icon">⚙️</div>
+          <h2>Importing your recipe…</h2>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div id="processingSteps"></div>
         </div>
       </div>
 
-      <!-- Skip -->
-      <div class="hero-panel" id="hero-skip">
-        <p style="color:var(--muted);font-size:0.9rem;padding:16px 0;">
-          The recipe will be saved without a photo. You can add one in Mealie later.
-        </p>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-secondary" onclick="showPanel('review')">← Back</button>
-        <button class="btn btn-primary" onclick="startImport()">Import to Mealie →</button>
+      <!-- ════════════════════════════════════ SUCCESS ════════════════════════════════ -->
+      <div class="view" id="view-success">
+        <div class="card success-card">
+          <div class="success-icon">🎉</div>
+          <h2 id="successName"></h2>
+          <p class="sub">has been added to your Mealie library.</p>
+          <div id="successWarn"></div>
+          <a id="recipeLink" href="#" target="_blank" class="recipe-link"
+            >View recipe in Mealie →</a
+          >
+          <button class="btn btn-secondary btn-full" onclick="resetAll()">
+            Import another recipe
+          </button>
+        </div>
       </div>
     </div>
+    <!-- /container -->
 
-  </div><!-- /view-upload -->
+    <script>
+      // ─────────────────────────────────────────────────────────────
+      // State
+      // ─────────────────────────────────────────────────────────────
+      let state = {
+        uploadedFile: null, // File object
+        ocrText: "",
+        heroBlob: null, // Blob | null
+        heroMode: "crop", // 'crop' | 'upload' | 'skip'
+        mealieUrl: "",
+      };
 
-  <!-- ══════════════════════════════════ PROCESSING ═══════════════════════════════ -->
-  <div class="view" id="view-processing">
-    <div class="card processing-card">
-      <div class="big-icon">⚙️</div>
-      <h2>Importing your recipe…</h2>
-      <div class="progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      </div>
-      <div id="processingSteps"></div>
-    </div>
-  </div>
+      // Canvas crop state
+      let cropCanvas, cropCtx, cropImg;
+      let cropStart = null,
+        cropEnd = null,
+        dragging = false;
 
-  <!-- ════════════════════════════════════ SUCCESS ════════════════════════════════ -->
-  <div class="view" id="view-success">
-    <div class="card success-card">
-      <div class="success-icon">🎉</div>
-      <h2 id="successName"></h2>
-      <p class="sub">has been added to your Mealie library.</p>
-      <div id="successWarn"></div>
-      <a id="recipeLink" href="#" target="_blank" class="recipe-link">View recipe in Mealie →</a>
-      <button class="btn btn-secondary btn-full" onclick="resetAll()">Import another recipe</button>
-    </div>
-  </div>
+      // ─────────────────────────────────────────────────────────────
+      // Boot
+      // ─────────────────────────────────────────────────────────────
+      async function init() {
+        try {
+          const res = await fetch("/api/config");
+          const data = await res.json();
+          if (data.configured) {
+            state.mealieUrl = data.mealie_url;
+            document.getElementById("reconfigBtn").style.display = "block";
+            showView("upload");
+            await initUploadWidget();
+            initCropCanvas();
+          } else {
+            showView("config");
+          }
+        } catch {
+          showView("config");
+        }
+      }
 
-</div><!-- /container -->
+      // ─────────────────────────────────────────────────────────────
+      // Views & panels
+      // ─────────────────────────────────────────────────────────────
+      function showView(name) {
+        document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+        document.getElementById("view-" + name).classList.add("active");
+      }
 
-<script>
-// ─────────────────────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────────────────────
-let state = {
-  uploadedFile: null,   // File object
-  ocrText:      '',
-  heroBlob:     null,   // Blob | null
-  heroMode:     'crop', // 'crop' | 'upload' | 'skip'
-  mealieUrl:    '',
-};
+      function showPanel(name) {
+        ["scan", "review", "hero"].forEach((n) => {
+          document.getElementById("panel-" + n).style.display = n === name ? "block" : "none";
+        });
+      }
 
-// Canvas crop state
-let cropCanvas, cropCtx, cropImg;
-let cropStart = null, cropEnd = null, dragging = false;
+      function setStep(n) {
+        [1, 2, 3].forEach((i) => {
+          const el = document.getElementById("step" + i);
+          el.classList.toggle("active", i === n);
+          el.classList.toggle("done", i < n);
+        });
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Boot
-// ─────────────────────────────────────────────────────────────
-async function init() {
-  try {
-    const res  = await fetch('/api/config');
-    const data = await res.json();
-    if (data.configured) {
-      state.mealieUrl = data.mealie_url;
-      document.getElementById('reconfigBtn').style.display = 'block';
-      showView('upload');
-      await initUploadWidget();
-      initCropCanvas();
-    } else {
-      showView('config');
-    }
-  } catch {
-    showView('config');
-  }
-}
+      // ─────────────────────────────────────────────────────────────
+      // Config
+      // ─────────────────────────────────────────────────────────────
+      function showReconfigure() {
+        document.getElementById("reconfigBtn").style.display = "none";
+        showView("config");
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Views & panels
-// ─────────────────────────────────────────────────────────────
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-}
+      async function saveConfig() {
+        const btn = document.getElementById("saveConfigBtn");
+        const msgEl = document.getElementById("configMsg");
+        msgEl.innerHTML = "";
+        btn.disabled = true;
+        btn.textContent = "Connecting…";
 
-function showPanel(name) {
-  ['scan', 'review', 'hero'].forEach(n => {
-    document.getElementById('panel-' + n).style.display = n === name ? 'block' : 'none';
-  });
-}
+        const url = document.getElementById("mealieUrl").value.trim();
+        const token = document.getElementById("mealieToken").value.trim();
+        const apiKey = document.getElementById("anthropicKey").value.trim();
 
-function setStep(n) {
-  [1, 2, 3].forEach(i => {
-    const el = document.getElementById('step' + i);
-    el.classList.toggle('active', i === n);
-    el.classList.toggle('done',   i < n);
-  });
-}
+        if (!url || !token || !apiKey) {
+          showMsg(msgEl, "error", "Please fill in all fields.");
+          btn.disabled = false;
+          btn.textContent = "Save & Connect";
+          return;
+        }
 
-// ─────────────────────────────────────────────────────────────
-// Config
-// ─────────────────────────────────────────────────────────────
-function showReconfigure() {
-  document.getElementById('reconfigBtn').style.display = 'none';
-  showView('config');
-}
+        try {
+          const res = await fetch("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mealie_url: url, mealie_token: token, anthropic_key: apiKey }),
+          });
+          if (!res.ok) throw new Error((await res.json()).detail || "Connection failed");
+          state.mealieUrl = url;
+          document.getElementById("reconfigBtn").style.display = "block";
+          showView("upload");
+          await initUploadWidget();
+          initCropCanvas();
+        } catch (e) {
+          showMsg(msgEl, "error", e.message);
+          btn.disabled = false;
+          btn.textContent = "Save & Connect";
+        }
+      }
 
-async function saveConfig() {
-  const btn    = document.getElementById('saveConfigBtn');
-  const msgEl  = document.getElementById('configMsg');
-  msgEl.innerHTML = '';
-  btn.disabled = true;
-  btn.textContent = 'Connecting…';
+      // ─────────────────────────────────────────────────────────────
+      // Upload widget (camera on mobile, dropzone on desktop)
+      // ─────────────────────────────────────────────────────────────
+      async function initUploadWidget() {
+        const container = document.getElementById("uploadWidget");
+        const mobile = await isMobileCamera();
 
-  const url    = document.getElementById('mealieUrl').value.trim();
-  const token  = document.getElementById('mealieToken').value.trim();
-  const apiKey = document.getElementById('anthropicKey').value.trim();
-
-  if (!url || !token || !apiKey) {
-    showMsg(msgEl, 'error', 'Please fill in all fields.');
-    btn.disabled = false; btn.textContent = 'Save & Connect';
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mealie_url: url, mealie_token: token, anthropic_key: apiKey }),
-    });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Connection failed');
-    state.mealieUrl = url;
-    document.getElementById('reconfigBtn').style.display = 'block';
-    showView('upload');
-    await initUploadWidget();
-    initCropCanvas();
-  } catch (e) {
-    showMsg(msgEl, 'error', e.message);
-    btn.disabled = false; btn.textContent = 'Save & Connect';
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Upload widget (camera on mobile, dropzone on desktop)
-// ─────────────────────────────────────────────────────────────
-async function initUploadWidget() {
-  const container = document.getElementById('uploadWidget');
-  const mobile    = await isMobileCamera();
-
-  if (mobile) {
-    container.innerHTML = `
+        if (mobile) {
+          container.innerHTML = `
       <div class="camera-btn">
         <input type="file" accept="image/*" capture="environment" onchange="handleScanFile(event)" />
         <div class="cam-icon">📷</div>
@@ -578,307 +865,357 @@ async function initUploadWidget() {
         or <label for="altFileInput">choose from files</label>
         <input type="file" id="altFileInput" accept="image/*" style="display:none;" onchange="handleScanFile(event)" />
       </div>`;
-  } else {
-    container.innerHTML = `
+        } else {
+          container.innerHTML = `
       <div class="upload-zone" id="dropZone">
         <input type="file" accept="image/*" onchange="handleScanFile(event)" />
         <div class="upload-icon">🖼️</div>
         <p><strong>Drop a cookbook photo here</strong></p>
         <p>or click to browse</p>
       </div>`;
-    setupDropzone('dropZone');
-  }
-}
+          setupDropzone("dropZone");
+        }
+      }
 
-async function isMobileCamera() {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const hasVid  = devices.some(d => d.kind === 'videoinput');
-    return hasVid && /Mobi|Android|iPad|iPhone/i.test(navigator.userAgent);
-  } catch { return false; }
-}
+      async function isMobileCamera() {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const hasVid = devices.some((d) => d.kind === "videoinput");
+          return hasVid && /Mobi|Android|iPad|iPhone/i.test(navigator.userAgent);
+        } catch {
+          return false;
+        }
+      }
 
-function setupDropzone(id) {
-  const zone = document.getElementById(id);
-  if (!zone) return;
-  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    const file = e.dataTransfer?.files[0];
-    if (file) processScanFile(file);
-  });
-}
+      function setupDropzone(id) {
+        const zone = document.getElementById(id);
+        if (!zone) return;
+        zone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          zone.classList.add("drag-over");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+        zone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          zone.classList.remove("drag-over");
+          const file = e.dataTransfer?.files[0];
+          if (file) processScanFile(file);
+        });
+      }
 
-function handleScanFile(e) {
-  const file = e.target.files[0];
-  if (file) processScanFile(file);
-}
+      function handleScanFile(e) {
+        const file = e.target.files[0];
+        if (file) processScanFile(file);
+      }
 
-async function processScanFile(file) {
-  const msgEl = document.getElementById('scanMsg');
-  showMsg(msgEl, 'info', 'Running OCR…', true);
+      async function processScanFile(file) {
+        const msgEl = document.getElementById("scanMsg");
+        showMsg(msgEl, "info", "Running OCR…", true);
 
-  state.uploadedFile = file;
+        state.uploadedFile = file;
 
-  // Load image into crop canvas
-  const blobUrl = URL.createObjectURL(file);
-  cropImg = new Image();
-  cropImg.onload = () => drawCropCanvas();
-  cropImg.src = blobUrl;
+        // Load image into crop canvas
+        const blobUrl = URL.createObjectURL(file);
+        cropImg = new Image();
+        cropImg.onload = () => drawCropCanvas();
+        cropImg.src = blobUrl;
 
-  // Run OCR
-  const formData = new FormData();
-  formData.append('file', file);
-  try {
-    const res = await fetch('/api/ocr', { method: 'POST', body: formData });
-    if (!res.ok) throw new Error((await res.json()).detail);
-    const data = await res.json();
-    state.ocrText = data.text;
-    document.getElementById('ocrText').value = data.text;
-    msgEl.innerHTML = '';
-    setStep(2);
-    showPanel('review');
-  } catch (e) {
-    showMsg(msgEl, 'error', `OCR failed: ${e.message}`);
-  }
-}
+        // Run OCR
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const res = await fetch("/api/ocr", { method: "POST", body: formData });
+          if (!res.ok) throw new Error((await res.json()).detail);
+          const data = await res.json();
+          state.ocrText = data.text;
+          document.getElementById("ocrText").value = data.text;
+          msgEl.innerHTML = "";
+          setStep(2);
+          showPanel("review");
+        } catch (e) {
+          showMsg(msgEl, "error", `OCR failed: ${e.message}`);
+        }
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Panel navigation
-// ─────────────────────────────────────────────────────────────
-function goToHero() {
-  const text = document.getElementById('ocrText').value.trim();
-  if (!text) { alert('OCR text is empty — please scan a page first.'); return; }
-  state.ocrText = text;
-  setStep(3);
-  showPanel('hero');
-}
+      // ─────────────────────────────────────────────────────────────
+      // Panel navigation
+      // ─────────────────────────────────────────────────────────────
+      function goToHero() {
+        const text = document.getElementById("ocrText").value.trim();
+        if (!text) {
+          alert("OCR text is empty — please scan a page first.");
+          return;
+        }
+        state.ocrText = text;
+        setStep(3);
+        showPanel("hero");
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Hero image tabs
-// ─────────────────────────────────────────────────────────────
-function selectHeroTab(mode) {
-  state.heroMode = mode;
-  document.querySelectorAll('.hero-tab').forEach((btn, i) => {
-    btn.classList.toggle('active', ['crop', 'upload', 'skip'][i] === mode);
-  });
-  document.querySelectorAll('.hero-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('hero-' + mode).classList.add('active');
-}
+      // ─────────────────────────────────────────────────────────────
+      // Hero image tabs
+      // ─────────────────────────────────────────────────────────────
+      function selectHeroTab(mode) {
+        state.heroMode = mode;
+        document.querySelectorAll(".hero-tab").forEach((btn, i) => {
+          btn.classList.toggle("active", ["crop", "upload", "skip"][i] === mode);
+        });
+        document.querySelectorAll(".hero-panel").forEach((p) => p.classList.remove("active"));
+        document.getElementById("hero-" + mode).classList.add("active");
+      }
 
-function handleHeroFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  state.heroBlob = file;
-  document.getElementById('heroUploadImg').src = URL.createObjectURL(file);
-  document.getElementById('heroUploadPreview').style.display = 'block';
-}
+      function handleHeroFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        state.heroBlob = file;
+        document.getElementById("heroUploadImg").src = URL.createObjectURL(file);
+        document.getElementById("heroUploadPreview").style.display = "block";
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Canvas crop
-// ─────────────────────────────────────────────────────────────
-function initCropCanvas() {
-  cropCanvas = document.getElementById('cropCanvas');
-  cropCtx    = cropCanvas.getContext('2d');
+      // ─────────────────────────────────────────────────────────────
+      // Canvas crop
+      // ─────────────────────────────────────────────────────────────
+      function initCropCanvas() {
+        cropCanvas = document.getElementById("cropCanvas");
+        cropCtx = cropCanvas.getContext("2d");
 
-  cropCanvas.addEventListener('mousedown',  e => startCrop(canvasPos(e)));
-  cropCanvas.addEventListener('mousemove',  e => { if (dragging) { cropEnd = canvasPos(e); redraw(); } });
-  cropCanvas.addEventListener('mouseup',    e => endCrop(canvasPos(e)));
+        cropCanvas.addEventListener("mousedown", (e) => startCrop(canvasPos(e)));
+        cropCanvas.addEventListener("mousemove", (e) => {
+          if (dragging) {
+            cropEnd = canvasPos(e);
+            redraw();
+          }
+        });
+        cropCanvas.addEventListener("mouseup", (e) => endCrop(canvasPos(e)));
 
-  cropCanvas.addEventListener('touchstart', e => { e.preventDefault(); startCrop(canvasPos(touchXY(e))); }, { passive: false });
-  cropCanvas.addEventListener('touchmove',  e => { e.preventDefault(); if (dragging) { cropEnd = canvasPos(touchXY(e)); redraw(); } }, { passive: false });
-  cropCanvas.addEventListener('touchend',   e => { e.preventDefault(); endCrop(canvasPos(touchXY(e))); }, { passive: false });
-}
+        cropCanvas.addEventListener(
+          "touchstart",
+          (e) => {
+            e.preventDefault();
+            startCrop(canvasPos(touchXY(e)));
+          },
+          { passive: false },
+        );
+        cropCanvas.addEventListener(
+          "touchmove",
+          (e) => {
+            e.preventDefault();
+            if (dragging) {
+              cropEnd = canvasPos(touchXY(e));
+              redraw();
+            }
+          },
+          { passive: false },
+        );
+        cropCanvas.addEventListener(
+          "touchend",
+          (e) => {
+            e.preventDefault();
+            endCrop(canvasPos(touchXY(e)));
+          },
+          { passive: false },
+        );
+      }
 
-function touchXY(e) { const t = e.touches[0] || e.changedTouches[0]; return { clientX: t.clientX, clientY: t.clientY }; }
+      function touchXY(e) {
+        const t = e.touches[0] || e.changedTouches[0];
+        return { clientX: t.clientX, clientY: t.clientY };
+      }
 
-function canvasPos(e) {
-  const rect   = cropCanvas.getBoundingClientRect();
-  const scaleX = cropCanvas.width  / rect.width;
-  const scaleY = cropCanvas.height / rect.height;
-  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-}
+      function canvasPos(e) {
+        const rect = cropCanvas.getBoundingClientRect();
+        const scaleX = cropCanvas.width / rect.width;
+        const scaleY = cropCanvas.height / rect.height;
+        return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+      }
 
-function drawCropCanvas() {
-  if (!cropImg) return;
-  const maxW    = cropCanvas.parentElement.clientWidth;
-  const scale   = Math.min(1, maxW / cropImg.naturalWidth);
-  cropCanvas.width  = cropImg.naturalWidth  * scale;
-  cropCanvas.height = cropImg.naturalHeight * scale;
-  cropCtx.drawImage(cropImg, 0, 0, cropCanvas.width, cropCanvas.height);
-}
+      function drawCropCanvas() {
+        if (!cropImg) return;
+        const maxW = cropCanvas.parentElement.clientWidth;
+        const scale = Math.min(1, maxW / cropImg.naturalWidth);
+        cropCanvas.width = cropImg.naturalWidth * scale;
+        cropCanvas.height = cropImg.naturalHeight * scale;
+        cropCtx.drawImage(cropImg, 0, 0, cropCanvas.width, cropCanvas.height);
+      }
 
-function redraw() {
-  drawCropCanvas();
-  if (cropStart && cropEnd) {
-    const { x, y, w, h } = selectionRect();
-    cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
-    cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
-    cropCtx.drawImage(cropImg, x, y, w, h, x, y, w, h);
-    cropCtx.strokeStyle = '#7ab090';
-    cropCtx.lineWidth   = 2;
-    cropCtx.strokeRect(x, y, w, h);
-  }
-}
+      function redraw() {
+        drawCropCanvas();
+        if (cropStart && cropEnd) {
+          const { x, y, w, h } = selectionRect();
+          cropCtx.fillStyle = "rgba(0,0,0,0.45)";
+          cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+          cropCtx.drawImage(cropImg, x, y, w, h, x, y, w, h);
+          cropCtx.strokeStyle = "#7ab090";
+          cropCtx.lineWidth = 2;
+          cropCtx.strokeRect(x, y, w, h);
+        }
+      }
 
-function selectionRect() {
-  const x = Math.min(cropStart.x, cropEnd.x);
-  const y = Math.min(cropStart.y, cropEnd.y);
-  const w = Math.abs(cropEnd.x - cropStart.x);
-  const h = Math.abs(cropEnd.y - cropStart.y);
-  return { x, y, w, h };
-}
+      function selectionRect() {
+        const x = Math.min(cropStart.x, cropEnd.x);
+        const y = Math.min(cropStart.y, cropEnd.y);
+        const w = Math.abs(cropEnd.x - cropStart.x);
+        const h = Math.abs(cropEnd.y - cropStart.y);
+        return { x, y, w, h };
+      }
 
-function startCrop(pos) {
-  cropStart = pos; cropEnd = null; dragging = true;
-  document.getElementById('cropBtn').disabled = true;
-  document.getElementById('cropPreview').style.display = 'none';
-}
+      function startCrop(pos) {
+        cropStart = pos;
+        cropEnd = null;
+        dragging = true;
+        document.getElementById("cropBtn").disabled = true;
+        document.getElementById("cropPreview").style.display = "none";
+      }
 
-function endCrop(pos) {
-  if (!dragging) return;
-  dragging = false;
-  cropEnd  = pos;
-  redraw();
-  const { w, h } = selectionRect();
-  if (w > 10 && h > 10) document.getElementById('cropBtn').disabled = false;
-}
+      function endCrop(pos) {
+        if (!dragging) return;
+        dragging = false;
+        cropEnd = pos;
+        redraw();
+        const { w, h } = selectionRect();
+        if (w > 10 && h > 10) document.getElementById("cropBtn").disabled = false;
+      }
 
-function clearCrop() {
-  cropStart = null; cropEnd = null; state.heroBlob = null;
-  drawCropCanvas();
-  document.getElementById('cropBtn').disabled = true;
-  document.getElementById('cropPreview').style.display = 'none';
-}
+      function clearCrop() {
+        cropStart = null;
+        cropEnd = null;
+        state.heroBlob = null;
+        drawCropCanvas();
+        document.getElementById("cropBtn").disabled = true;
+        document.getElementById("cropPreview").style.display = "none";
+      }
 
-function confirmCrop() {
-  if (!cropStart || !cropEnd) return;
-  const { x, y, w, h } = selectionRect();
-  const tmp = document.createElement('canvas');
-  tmp.width = w; tmp.height = h;
-  tmp.getContext('2d').drawImage(cropCanvas, x, y, w, h, 0, 0, w, h);
-  tmp.toBlob(blob => {
-    state.heroBlob = blob;
-    document.getElementById('cropPreviewImg').src = URL.createObjectURL(blob);
-    document.getElementById('cropPreview').style.display = 'block';
-  }, 'image/webp', 0.9);
-}
+      function confirmCrop() {
+        if (!cropStart || !cropEnd) return;
+        const { x, y, w, h } = selectionRect();
+        const tmp = document.createElement("canvas");
+        tmp.width = w;
+        tmp.height = h;
+        tmp.getContext("2d").drawImage(cropCanvas, x, y, w, h, 0, 0, w, h);
+        tmp.toBlob(
+          (blob) => {
+            state.heroBlob = blob;
+            document.getElementById("cropPreviewImg").src = URL.createObjectURL(blob);
+            document.getElementById("cropPreview").style.display = "block";
+          },
+          "image/webp",
+          0.9,
+        );
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Import
-// ─────────────────────────────────────────────────────────────
-async function startImport() {
-  showView('processing');
+      // ─────────────────────────────────────────────────────────────
+      // Import
+      // ─────────────────────────────────────────────────────────────
+      async function startImport() {
+        showView("processing");
 
-  const heroBlob = state.heroMode !== 'skip' ? state.heroBlob : null;
+        const heroBlob = state.heroMode !== "skip" ? state.heroBlob : null;
 
-  // Step 1: structure via Claude
-  addProcessStep('Sending text to Claude…', 'loading');
-  setProgress(10);
+        // Step 1: structure via Claude
+        addProcessStep("Sending text to Claude…", "loading");
+        setProgress(10);
 
-  let structured;
-  try {
-    const res = await fetch('/api/structure', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: state.ocrText }),
-    });
-    if (!res.ok) throw new Error((await res.json()).detail);
-    structured = await res.json();
-    addProcessStep(`Parsed: "${structured.name}"`, 'done');
-    setProgress(40);
-  } catch (e) {
-    addProcessStep(`Failed: ${e.message}`, 'error');
-    return;
-  }
+        let structured;
+        try {
+          const res = await fetch("/api/structure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: state.ocrText }),
+          });
+          if (!res.ok) throw new Error((await res.json()).detail);
+          structured = await res.json();
+          addProcessStep(`Parsed: "${structured.name}"`, "done");
+          setProgress(40);
+        } catch (e) {
+          addProcessStep(`Failed: ${e.message}`, "error");
+          return;
+        }
 
-  // Step 2: push to Mealie
-  addProcessStep('Creating recipe in Mealie…', 'loading');
-  setProgress(60);
+        // Step 2: push to Mealie
+        addProcessStep("Creating recipe in Mealie…", "loading");
+        setProgress(60);
 
-  try {
-    const formData = new FormData();
-    formData.append('structured_json', JSON.stringify(structured));
-    if (heroBlob) formData.append('hero_image', heroBlob, 'hero.webp');
+        try {
+          const formData = new FormData();
+          formData.append("structured_json", JSON.stringify(structured));
+          if (heroBlob) formData.append("hero_image", heroBlob, "hero.webp");
 
-    const res = await fetch('/api/import', { method: 'POST', body: formData });
-    if (!res.ok) throw new Error((await res.json()).detail);
-    const result = await res.json();
+          const res = await fetch("/api/import", { method: "POST", body: formData });
+          if (!res.ok) throw new Error((await res.json()).detail);
+          const result = await res.json();
 
-    setProgress(100);
-    addProcessStep('Done!', 'done');
-    setTimeout(() => showSuccess(structured.name, result.slug, result.warning), 700);
-  } catch (e) {
-    addProcessStep(`Failed: ${e.message}`, 'error');
-  }
-}
+          setProgress(100);
+          addProcessStep("Done!", "done");
+          setTimeout(() => showSuccess(structured.name, result.slug, result.warning), 700);
+        } catch (e) {
+          addProcessStep(`Failed: ${e.message}`, "error");
+        }
+      }
 
-function addProcessStep(text, status) {
-  const container = document.getElementById('processingSteps');
-  const div = document.createElement('div');
-  div.className = 'alert alert-' + (status === 'done' ? 'info' : status === 'error' ? 'error' : 'info');
-  div.innerHTML = status === 'loading'
-    ? `<div class="spinner"></div><span>${text}</span>`
-    : `<span>${status === 'done' ? '✓' : '✗'}</span><span>${text}</span>`;
-  container.appendChild(div);
-}
+      function addProcessStep(text, status) {
+        const container = document.getElementById("processingSteps");
+        const div = document.createElement("div");
+        div.className =
+          "alert alert-" + (status === "done" ? "info" : status === "error" ? "error" : "info");
+        div.innerHTML =
+          status === "loading"
+            ? `<div class="spinner"></div><span>${text}</span>`
+            : `<span>${status === "done" ? "✓" : "✗"}</span><span>${text}</span>`;
+        container.appendChild(div);
+      }
 
-function setProgress(pct) {
-  document.getElementById('progressFill').style.width = pct + '%';
-}
+      function setProgress(pct) {
+        document.getElementById("progressFill").style.width = pct + "%";
+      }
 
-function showSuccess(name, slug, warning) {
-  document.getElementById('successName').textContent = name;
-  const link = state.mealieUrl
-    ? `${state.mealieUrl}/g/home/r/${slug}`
-    : `#`;
-  document.getElementById('recipeLink').href = link;
-  if (warning) {
-    document.getElementById('successWarn').innerHTML =
-      `<div class="alert alert-warn" style="margin-bottom:16px;">⚠️ ${warning}</div>`;
-  }
-  showView('success');
-}
+      function showSuccess(name, slug, warning) {
+        document.getElementById("successName").textContent = name;
+        const link = state.mealieUrl ? `${state.mealieUrl}/g/home/r/${slug}` : `#`;
+        document.getElementById("recipeLink").href = link;
+        if (warning) {
+          document.getElementById("successWarn").innerHTML =
+            `<div class="alert alert-warn" style="margin-bottom:16px;">⚠️ ${warning}</div>`;
+        }
+        showView("success");
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Reset
-// ─────────────────────────────────────────────────────────────
-function resetAll() {
-  state.uploadedFile = null;
-  state.ocrText      = '';
-  state.heroBlob     = null;
-  state.heroMode     = 'crop';
-  cropStart = null; cropEnd = null;
+      // ─────────────────────────────────────────────────────────────
+      // Reset
+      // ─────────────────────────────────────────────────────────────
+      function resetAll() {
+        state.uploadedFile = null;
+        state.ocrText = "";
+        state.heroBlob = null;
+        state.heroMode = "crop";
+        cropStart = null;
+        cropEnd = null;
 
-  document.getElementById('ocrText').value      = '';
-  document.getElementById('scanMsg').innerHTML  = '';
-  document.getElementById('processingSteps').innerHTML = '';
-  document.getElementById('successWarn').innerHTML     = '';
-  document.getElementById('progressFill').style.width  = '0%';
-  document.getElementById('cropPreview').style.display      = 'none';
-  document.getElementById('heroUploadPreview').style.display = 'none';
-  document.getElementById('cropBtn').disabled = true;
+        document.getElementById("ocrText").value = "";
+        document.getElementById("scanMsg").innerHTML = "";
+        document.getElementById("processingSteps").innerHTML = "";
+        document.getElementById("successWarn").innerHTML = "";
+        document.getElementById("progressFill").style.width = "0%";
+        document.getElementById("cropPreview").style.display = "none";
+        document.getElementById("heroUploadPreview").style.display = "none";
+        document.getElementById("cropBtn").disabled = true;
 
-  selectHeroTab('crop');
-  setStep(1);
-  showPanel('scan');
-  showView('upload');
-  initUploadWidget();
-}
+        selectHeroTab("crop");
+        setStep(1);
+        showPanel("scan");
+        showView("upload");
+        initUploadWidget();
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────
-function showMsg(el, type, text, spinner = false) {
-  el.innerHTML = `<div class="alert alert-${type}">${spinner ? '<div class="spinner"></div>' : ''}<span>${text}</span></div>`;
-}
+      // ─────────────────────────────────────────────────────────────
+      // Helpers
+      // ─────────────────────────────────────────────────────────────
+      function showMsg(el, type, text, spinner = false) {
+        el.innerHTML = `<div class="alert alert-${type}">${spinner ? '<div class="spinner"></div>' : ""}<span>${text}</span></div>`;
+      }
 
-// ─────────────────────────────────────────────────────────────
-// Start
-// ─────────────────────────────────────────────────────────────
-init();
-</script>
-</body>
+      // ─────────────────────────────────────────────────────────────
+      // Start
+      // ─────────────────────────────────────────────────────────────
+      init();
+    </script>
+  </body>
 </html>

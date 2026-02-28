@@ -4,20 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mealie Cookbook Scanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Fallback: force font even before Google Fonts resolves */
+      @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap");
+    </style>
     <style>
       :root {
-        --bg: #0f1117;
-        --surface: #1a1d27;
-        --surface2: #22263a;
-        --border: #2e3350;
-        --accent: #5c8a6e;
-        --accent-light: #7ab090;
-        --accent-hover: #4a7059;
-        --text: #e8eaf0;
-        --muted: #8a8fa8;
-        --danger: #e05c5c;
-        --warn: #e0a85c;
-        --radius: 10px;
+        /* Warm cream / parchment */
+        --bg: #fdf8f0;
+        --surface: #fffdf8;
+        --surface2: #f5ece0;
+        --border: #e6d5c3;
+        --accent: #6b9080;
+        --accent-light: #80a896;
+        --accent-hover: #587869;
+        --text: #3a2e26;
+        --muted: #8c7d6e;
+        --danger: #b03a2e;
+        --warn: #a0671a;
+        --radius: 14px;
       }
 
       *,
@@ -29,7 +40,8 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Nunito", "Ubuntu", "Cantarell", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 20px;
         background: var(--bg);
         color: var(--text);
         min-height: 100vh;
@@ -43,19 +55,49 @@
         width: 100%;
         background: var(--surface);
         border-bottom: 1px solid var(--border);
-        padding: 14px 24px;
+        padding: 10px 28px;
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
       .logo {
-        font-size: 1.1rem;
-        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 800;
         color: var(--accent-light);
+        text-decoration: none;
+      }
+      .logo img {
+        height: 44px;
+        width: auto;
+      }
+      .config-hero {
+        text-align: center;
+        padding: 32px 0 8px;
+      }
+      .config-hero img {
+        height: 72px;
+        width: auto;
+        margin-bottom: 12px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .config-hero h1 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--accent);
+        margin-bottom: 4px;
+      }
+      .config-hero p {
+        color: var(--muted);
+        font-size: 0.95rem;
       }
       .logo span {
         color: var(--muted);
-        font-weight: 400;
+        font-weight: 500;
       }
       .config-link {
         font-size: 0.8rem;
@@ -72,8 +114,8 @@
       /* ---- Layout ---- */
       .container {
         width: 100%;
-        max-width: 660px;
-        padding: 28px 16px 48px;
+        max-width: 740px;
+        padding: 32px 20px 56px;
       }
 
       /* ---- Views ---- */
@@ -93,15 +135,15 @@
         margin-bottom: 14px;
       }
       .card h2 {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 4px;
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin-bottom: 6px;
       }
       .card .sub {
         color: var(--muted);
-        font-size: 0.875rem;
+        font-size: 1rem;
         margin-bottom: 20px;
-        line-height: 1.4;
+        line-height: 1.55;
       }
 
       /* ---- Forms ---- */
@@ -110,13 +152,13 @@
       }
       label {
         display: block;
-        font-size: 0.85rem;
-        font-weight: 500;
+        font-size: 0.95rem;
+        font-weight: 700;
         color: var(--muted);
         margin-bottom: 6px;
       }
       .hint {
-        font-size: 0.78rem;
+        font-size: 0.85rem;
         color: var(--muted);
         margin-top: 4px;
       }
@@ -125,7 +167,7 @@
       input[type="password"],
       textarea {
         width: 100%;
-        background: var(--bg);
+        background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: 6px;
         padding: 10px 14px;
@@ -151,10 +193,10 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        padding: 11px 20px;
-        border-radius: 6px;
-        font-size: 0.95rem;
-        font-weight: 600;
+        padding: 12px 22px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 700;
         cursor: pointer;
         border: none;
         transition:
@@ -189,6 +231,7 @@
         display: flex;
         gap: 8px;
         margin-top: 16px;
+        flex-wrap: wrap;
       }
       .btn-row .btn-primary {
         flex: 1;
@@ -196,9 +239,9 @@
 
       /* ---- Upload zone ---- */
       .upload-zone {
-        border: 2px dashed var(--border);
+        border: 2px dashed var(--accent);
         border-radius: var(--radius);
-        padding: 44px 20px;
+        padding: 56px 20px;
         text-align: center;
         cursor: pointer;
         transition:
@@ -218,10 +261,12 @@
         cursor: pointer;
         width: 100%;
         height: 100%;
+        font-size: 0;
+        z-index: 2;
       }
       .upload-icon {
-        font-size: 2.8rem;
-        margin-bottom: 10px;
+        font-size: 3.5rem;
+        margin-bottom: 12px;
       }
       .upload-zone p {
         color: var(--muted);
@@ -236,7 +281,7 @@
         width: 100%;
         padding: 44px 20px;
         background: var(--surface2);
-        border: 2px solid var(--border);
+        border: 2px solid var(--accent);
         border-radius: var(--radius);
         cursor: pointer;
         text-align: center;
@@ -256,6 +301,8 @@
         cursor: pointer;
         width: 100%;
         height: 100%;
+        font-size: 0;
+        z-index: 2;
       }
       .camera-btn .cam-icon {
         font-size: 2.8rem;
@@ -402,6 +449,59 @@
         margin-bottom: 4px;
       }
 
+      /* ---- Scan preview + rotate ---- */
+      .scan-preview {
+        margin-top: 14px;
+      }
+      .rotate-tools {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .rotate-tools .btn {
+        font-size: 0.9rem;
+        padding: 9px 14px;
+      }
+
+      /* ---- OCR tools ---- */
+      .ocr-tools {
+        display: flex;
+        gap: 8px;
+        margin: 12px 0;
+        flex-wrap: wrap;
+      }
+      .ocr-tools .btn {
+        font-size: 0.88rem;
+        padding: 8px 14px;
+      }
+      .split-hint {
+        font-size: 0.88rem;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      #splitCanvasWrap {
+        cursor: col-resize;
+      }
+
+      /* ---- OCR ingredient warning ---- */
+      .ocr-warn {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: #fffbe8;
+        border: 1.5px solid #e6c96a;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.88rem;
+        color: #7a5900;
+        margin-bottom: 10px;
+      }
+      .ocr-warn-icon {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
       /* ---- Status / alerts ---- */
       .alert {
         display: flex;
@@ -414,18 +514,19 @@
         margin-top: 12px;
       }
       .alert-info {
-        background: rgba(92, 138, 110, 0.1);
-        border: 1px solid rgba(92, 138, 110, 0.3);
+        background: rgba(107, 144, 128, 0.1);
+        border: 1px solid rgba(107, 144, 128, 0.35);
+        color: #4a7060;
       }
       .alert-error {
-        background: rgba(224, 92, 92, 0.1);
-        border: 1px solid rgba(224, 92, 92, 0.3);
-        color: #f08080;
+        background: rgba(176, 58, 46, 0.08);
+        border: 1px solid rgba(176, 58, 46, 0.3);
+        color: #b03a2e;
       }
       .alert-warn {
-        background: rgba(224, 168, 92, 0.1);
-        border: 1px solid rgba(224, 168, 92, 0.3);
-        color: #e0c07a;
+        background: rgba(160, 103, 26, 0.1);
+        border: 1px solid rgba(160, 103, 26, 0.35);
+        color: #a0671a;
       }
 
       /* ---- Spinner ---- */
@@ -433,8 +534,8 @@
         width: 16px;
         height: 16px;
         flex-shrink: 0;
-        border: 2px solid rgba(255, 255, 255, 0.15);
-        border-top-color: var(--accent-light);
+        border: 2px solid rgba(107, 144, 128, 0.25);
+        border-top-color: var(--accent);
         border-radius: 50%;
         animation: spin 0.65s linear infinite;
       }
@@ -533,7 +634,10 @@
   </head>
   <body>
     <header>
-      <div class="logo">📖 Mealie <span>Cookbook Scanner</span></div>
+      <div class="logo">
+        <img src="/imgs/mealiescancon.png" alt="Mealie Cookbook Scanner logo" />
+        Mealie <span>Cookbook Scanner</span>
+      </div>
       <button
         class="config-link"
         id="reconfigBtn"
@@ -547,11 +651,16 @@
     <div class="container">
       <!-- ═══════════════════════════════════ CONFIG ═══════════════════════════════════ -->
       <div class="view" id="view-config">
+        <div class="config-hero">
+          <img src="/imgs/mealiescancon.png" alt="Mealie Cookbook Scanner" />
+          <h1>Cookbook Scanner</h1>
+          <p>Scan recipes from your cookbooks straight into Mealie.</p>
+        </div>
         <div class="card">
-          <h2>Welcome — let's get set up</h2>
+          <h2>Let's get set up</h2>
           <p class="sub">
-            Enter your Mealie and Anthropic details below. This only needs to be done once — they're
-            saved to your server volume.
+            Enter your Mealie and Anthropic details below. This only needs to be done once — saved
+            to your server volume.
           </p>
 
           <div class="field">
@@ -559,7 +668,7 @@
             <input
               type="url"
               id="mealieUrl"
-              placeholder="http://192.168.1.x:9925"
+              value="http://localhost:9925"
               autocomplete="off"
             />
           </div>
@@ -613,6 +722,31 @@
             leaves your server.
           </p>
           <div id="uploadWidget"></div>
+
+          <div id="scanPreview" class="scan-preview" style="display: none">
+            <div class="canvas-wrap">
+              <canvas id="previewCanvas"></canvas>
+            </div>
+            <div class="rotate-tools">
+              <button class="btn btn-secondary" onclick="rotateScan(-90)">↺ Left</button>
+              <button class="btn btn-secondary" onclick="rotateScan(90)">↻ Right</button>
+              <button class="btn btn-secondary" id="columnToggleBtn" onclick="toggleColumnSplitter()">📏 Columns</button>
+              <button class="btn btn-primary" style="flex: 1" onclick="runOCR()">
+                Run OCR →
+              </button>
+            </div>
+
+            <!-- Column splitter (hidden by default, shown when user clicks Columns) -->
+            <div id="columnSplitter" style="display: none; margin-top: 12px">
+              <p class="split-hint">
+                Drag the line to where the columns split — OCR will scan each side separately for better accuracy.
+              </p>
+              <div class="canvas-wrap" id="splitCanvasWrap">
+                <canvas id="splitCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+
           <div id="scanMsg"></div>
         </div>
 
@@ -623,11 +757,22 @@
             Fix any OCR mistakes before sending to Claude. Only this text is sent externally — not
             the image.
           </p>
+
+          <div class="ocr-warn">
+            <span class="ocr-warn-icon">⚠️</span>
+            <span>Make sure the <strong>ingredient list</strong> is complete and in order before sending to Claude — OCR sometimes muddles quantities or skips lines.</span>
+          </div>
+
           <div class="field">
             <textarea id="ocrText"></textarea>
           </div>
+
+          <div id="reviewMsg"></div>
+
           <div class="btn-row">
-            <button class="btn btn-secondary" onclick="showPanel('scan')">← Back</button>
+            <button class="btn btn-secondary" onclick="goBackToScan()">← Back</button>
+            <button class="btn btn-secondary" onclick="addPage()">➕ Add page</button>
+            <button class="btn btn-secondary" id="visionBtn" onclick="runVisionDirect()">⚡ Claude Vision</button>
             <button class="btn btn-primary" onclick="goToHero()">Looks good →</button>
           </div>
         </div>
@@ -676,20 +821,48 @@
 
           <!-- Upload -->
           <div class="hero-panel" id="hero-upload">
-            <div class="upload-zone" id="heroZone">
-              <input
-                type="file"
-                id="heroFileInput"
-                accept="image/*"
-                onchange="handleHeroFile(event)"
-              />
-              <div class="upload-icon">🖼️</div>
-              <p><strong>Choose an image</strong></p>
-              <p>or drag and drop here</p>
+            <!-- Step 1: file picker -->
+            <div id="heroUploadZone">
+              <div class="upload-zone" id="heroZone">
+                <input
+                  type="file"
+                  id="heroFileInput"
+                  accept="image/*"
+                  onchange="handleHeroFile(event)"
+                />
+                <div class="upload-icon">🖼️</div>
+                <p><strong>Choose an image</strong></p>
+                <p>or drag and drop here</p>
+              </div>
             </div>
-            <div id="heroUploadPreview" style="display: none">
-              <p class="preview-label">✓ Hero image ready</p>
-              <img id="heroUploadImg" class="preview-img" />
+            <!-- Step 2: rotate + crop the uploaded image -->
+            <div id="heroUploadCropArea" style="display: none">
+              <p class="crop-hint">
+                Rotate if needed, then drag to select a crop area — or click "Use full image" to skip cropping.
+              </p>
+              <div class="canvas-wrap" id="heroUploadCanvasWrap">
+                <canvas id="heroUploadCropCanvas"></canvas>
+              </div>
+              <div class="rotate-tools" style="margin-top: 8px">
+                <button class="btn btn-secondary" onclick="rotateHeroUpload(-90)">↺ Left</button>
+                <button class="btn btn-secondary" onclick="rotateHeroUpload(90)">↻ Right</button>
+                <button class="btn btn-secondary" onclick="clearHeroUploadCrop()">✕ Clear</button>
+                <button
+                  class="btn btn-primary"
+                  style="flex: 1"
+                  id="heroUploadCropBtn"
+                  onclick="confirmHeroUploadCrop()"
+                >
+                  Use full image →
+                </button>
+              </div>
+              <div style="margin-top: 6px">
+                <button class="btn btn-secondary" style="font-size:0.85rem; padding: 6px 12px" onclick="resetHeroUpload()">← Pick different image</button>
+              </div>
+              <div id="heroUploadCropPreview" style="display: none; margin-top: 10px">
+                <p class="preview-label">✓ Hero image ready</p>
+                <img id="heroUploadCropPreviewImg" class="preview-img" />
+              </div>
             </div>
           </div>
 
@@ -750,13 +923,29 @@
         heroBlob: null, // Blob | null
         heroMode: "crop", // 'crop' | 'upload' | 'skip'
         mealieUrl: "",
+        savedConfig: null, // full config from server for prefilling
+        structuredData: null, // pre-populated when using vision mode
+        appendingPage: false, // true when scanning an extra page to append to ocrText
       };
 
-      // Canvas crop state
+      // Scan rotation state
+      let scanRotation = 0; // 0 | 90 | 180 | 270
+
+      // Column splitter state
+      let splitCanvas, splitCtx, splitX = 0.5, splitDragging = false;
+
+      // Scan canvas crop state
       let cropCanvas, cropCtx, cropImg;
       let cropStart = null,
         cropEnd = null,
         dragging = false;
+
+      // Hero upload canvas crop state
+      let heroUploadCanvas, heroUploadCtx, heroUploadSrcImg;
+      let heroUploadStart = null,
+        heroUploadEnd = null,
+        heroUploadDragging = false,
+        heroUploadRotation = 0;
 
       // ─────────────────────────────────────────────────────────────
       // Boot
@@ -767,6 +956,7 @@
           const data = await res.json();
           if (data.configured) {
             state.mealieUrl = data.mealie_url;
+            state.savedConfig = data;
             document.getElementById("reconfigBtn").style.display = "block";
             showView("upload");
             await initUploadWidget();
@@ -806,6 +996,17 @@
       // ─────────────────────────────────────────────────────────────
       function showReconfigure() {
         document.getElementById("reconfigBtn").style.display = "none";
+        if (state.savedConfig) {
+          document.getElementById("mealieUrl").value = state.savedConfig.mealie_url || "";
+          if (state.savedConfig.mealie_token_set) {
+            document.getElementById("mealieToken").placeholder = "Re-enter your Mealie token to reconfigure";
+            document.getElementById("mealieToken").value = "";
+          }
+          if (state.savedConfig.anthropic_key_set) {
+            document.getElementById("anthropicKey").placeholder = "Re-enter your Anthropic key to reconfigure";
+            document.getElementById("anthropicKey").value = "";
+          }
+        }
         showView("config");
       }
 
@@ -835,6 +1036,7 @@
           });
           if (!res.ok) throw new Error((await res.json()).detail || "Connection failed");
           state.mealieUrl = url;
+          state.savedConfig = { mealie_url: url, mealie_token_set: true, anthropic_key_set: true };
           document.getElementById("reconfigBtn").style.display = "block";
           showView("upload");
           await initUploadWidget();
@@ -908,27 +1110,101 @@
         if (file) processScanFile(file);
       }
 
-      async function processScanFile(file) {
+      function processScanFile(file) {
+        state.uploadedFile = file;
+        scanRotation = 0;
+        document.getElementById("scanMsg").innerHTML = "";
+
+        const blobUrl = URL.createObjectURL(file);
+        cropImg = new Image();
+        cropImg.onload = () => {
+          document.getElementById("scanPreview").style.display = "block";
+          drawPreviewCanvas();
+        };
+        cropImg.src = blobUrl;
+      }
+
+      function drawPreviewCanvas() {
+        const canvas = document.getElementById("previewCanvas");
+        const ctx = canvas.getContext("2d");
+        const rotated = scanRotation === 90 || scanRotation === 270;
+        const srcW = cropImg.naturalWidth;
+        const srcH = cropImg.naturalHeight;
+        const dispW = rotated ? srcH : srcW;
+        const dispH = rotated ? srcW : srcH;
+        const maxW = canvas.parentElement.clientWidth;
+        const scale = Math.min(1, maxW / dispW);
+        canvas.width = dispW * scale;
+        canvas.height = dispH * scale;
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((scanRotation * Math.PI) / 180);
+        ctx.drawImage(cropImg, (-srcW * scale) / 2, (-srcH * scale) / 2, srcW * scale, srcH * scale);
+        ctx.restore();
+      }
+
+      function rotateScan(delta) {
+        scanRotation = (scanRotation + delta + 360) % 360;
+        drawPreviewCanvas();
+      }
+
+      function getRotatedBlob() {
+        return new Promise((resolve) => {
+          if (scanRotation === 0) {
+            resolve(state.uploadedFile);
+            return;
+          }
+          const rotated = scanRotation === 90 || scanRotation === 270;
+          const srcW = cropImg.naturalWidth;
+          const srcH = cropImg.naturalHeight;
+          const c = document.createElement("canvas");
+          c.width = rotated ? srcH : srcW;
+          c.height = rotated ? srcW : srcH;
+          const ctx = c.getContext("2d");
+          ctx.translate(c.width / 2, c.height / 2);
+          ctx.rotate((scanRotation * Math.PI) / 180);
+          ctx.drawImage(cropImg, -srcW / 2, -srcH / 2, srcW, srcH);
+          c.toBlob(resolve, "image/jpeg", 0.95);
+        });
+      }
+
+      async function runOCR() {
+        // If column splitter is active, use it for better accuracy
+        if (document.getElementById("columnSplitter").style.display !== "none") {
+          await runColumnOCR();
+          return;
+        }
+
         const msgEl = document.getElementById("scanMsg");
         showMsg(msgEl, "info", "Running OCR…", true);
 
-        state.uploadedFile = file;
+        const rotatedBlob = await getRotatedBlob();
 
-        // Load image into crop canvas
-        const blobUrl = URL.createObjectURL(file);
-        cropImg = new Image();
-        cropImg.onload = () => drawCropCanvas();
-        cropImg.src = blobUrl;
+        // Update cropImg to the rotated version so crop canvas and split canvas use it
+        if (scanRotation !== 0) {
+          const url = URL.createObjectURL(rotatedBlob);
+          await new Promise((resolve) => {
+            cropImg = new Image();
+            cropImg.onload = resolve;
+            cropImg.src = url;
+          });
+          state.uploadedFile = rotatedBlob;
+        }
+        drawCropCanvas();
 
-        // Run OCR
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", rotatedBlob, "scan.jpg");
         try {
           const res = await fetch("/api/ocr", { method: "POST", body: formData });
           if (!res.ok) throw new Error((await res.json()).detail);
           const data = await res.json();
-          state.ocrText = data.text;
-          document.getElementById("ocrText").value = data.text;
+          if (state.appendingPage) {
+            state.ocrText = state.ocrText + "\n\n--- page break ---\n\n" + data.text;
+            state.appendingPage = false;
+          } else {
+            state.ocrText = data.text;
+          }
+          document.getElementById("ocrText").value = state.ocrText;
           msgEl.innerHTML = "";
           setStep(2);
           showPanel("review");
@@ -940,6 +1216,27 @@
       // ─────────────────────────────────────────────────────────────
       // Panel navigation
       // ─────────────────────────────────────────────────────────────
+      function goBackToScan() {
+        state.appendingPage = false;
+        showPanel("scan");
+      }
+
+      function addPage() {
+        state.appendingPage = true;
+        // Reset scan canvas so user picks a fresh image, but keep ocrText
+        state.uploadedFile = null;
+        scanRotation = 0;
+        cropStart = null;
+        cropEnd = null;
+        splitX = 0.5;
+        document.getElementById("scanPreview").style.display = "none";
+        document.getElementById("columnSplitter").style.display = "none";
+        const colBtn = document.getElementById("columnToggleBtn");
+        if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
+        document.getElementById("scanMsg").innerHTML = "";
+        showPanel("scan");
+      }
+
       function goToHero() {
         const text = document.getElementById("ocrText").value.trim();
         if (!text) {
@@ -966,9 +1263,196 @@
       function handleHeroFile(e) {
         const file = e.target.files[0];
         if (!file) return;
-        state.heroBlob = file;
-        document.getElementById("heroUploadImg").src = URL.createObjectURL(file);
-        document.getElementById("heroUploadPreview").style.display = "block";
+        const blobUrl = URL.createObjectURL(file);
+        heroUploadSrcImg = new Image();
+        heroUploadSrcImg.onload = () => {
+          document.getElementById("heroUploadZone").style.display = "none";
+          document.getElementById("heroUploadCropArea").style.display = "block";
+          initHeroUploadCanvas();
+          drawHeroUploadCanvas();
+        };
+        heroUploadSrcImg.src = blobUrl;
+      }
+
+      function initHeroUploadCanvas() {
+        heroUploadCanvas = document.getElementById("heroUploadCropCanvas");
+        heroUploadCtx = heroUploadCanvas.getContext("2d");
+
+        heroUploadCanvas.addEventListener("mousedown", (e) =>
+          startHeroUploadCrop(heroCanvasPos(e)),
+        );
+        heroUploadCanvas.addEventListener("mousemove", (e) => {
+          if (heroUploadDragging) {
+            heroUploadEnd = heroCanvasPos(e);
+            redrawHeroUpload();
+          }
+        });
+        heroUploadCanvas.addEventListener("mouseup", (e) =>
+          endHeroUploadCrop(heroCanvasPos(e)),
+        );
+        heroUploadCanvas.addEventListener(
+          "touchstart",
+          (e) => {
+            e.preventDefault();
+            startHeroUploadCrop(heroCanvasPos(touchXY(e)));
+          },
+          { passive: false },
+        );
+        heroUploadCanvas.addEventListener(
+          "touchmove",
+          (e) => {
+            e.preventDefault();
+            if (heroUploadDragging) {
+              heroUploadEnd = heroCanvasPos(touchXY(e));
+              redrawHeroUpload();
+            }
+          },
+          { passive: false },
+        );
+        heroUploadCanvas.addEventListener(
+          "touchend",
+          (e) => {
+            e.preventDefault();
+            endHeroUploadCrop(heroCanvasPos(touchXY(e)));
+          },
+          { passive: false },
+        );
+      }
+
+      function heroCanvasPos(e) {
+        const rect = heroUploadCanvas.getBoundingClientRect();
+        return {
+          x: (e.clientX - rect.left) * (heroUploadCanvas.width / rect.width),
+          y: (e.clientY - rect.top) * (heroUploadCanvas.height / rect.height),
+        };
+      }
+
+      function drawHeroUploadCanvas() {
+        if (!heroUploadSrcImg) return;
+        const maxW = heroUploadCanvas.parentElement.clientWidth;
+        const scale = Math.min(1, maxW / heroUploadSrcImg.naturalWidth);
+        heroUploadCanvas.width = heroUploadSrcImg.naturalWidth * scale;
+        heroUploadCanvas.height = heroUploadSrcImg.naturalHeight * scale;
+        heroUploadCtx.drawImage(
+          heroUploadSrcImg,
+          0,
+          0,
+          heroUploadCanvas.width,
+          heroUploadCanvas.height,
+        );
+      }
+
+      function rotateHeroUpload(delta) {
+        if (!heroUploadSrcImg) return;
+        const rot = (delta + 360) % 360;
+        const srcW = heroUploadSrcImg.naturalWidth;
+        const srcH = heroUploadSrcImg.naturalHeight;
+        const rotated = rot === 90 || rot === 270;
+        const c = document.createElement("canvas");
+        c.width = rotated ? srcH : srcW;
+        c.height = rotated ? srcW : srcH;
+        const ctx = c.getContext("2d");
+        ctx.translate(c.width / 2, c.height / 2);
+        ctx.rotate((rot * Math.PI) / 180);
+        ctx.drawImage(heroUploadSrcImg, -srcW / 2, -srcH / 2);
+        c.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => {
+            heroUploadSrcImg = img;
+            heroUploadStart = null;
+            heroUploadEnd = null;
+            state.heroBlob = null;
+            document.getElementById("heroUploadCropBtn").textContent = "Use full image →";
+            document.getElementById("heroUploadCropPreview").style.display = "none";
+            drawHeroUploadCanvas();
+          };
+          img.src = url;
+        }, "image/jpeg", 0.95);
+      }
+
+      function redrawHeroUpload() {
+        drawHeroUploadCanvas();
+        if (heroUploadStart && heroUploadEnd) {
+          const { x, y, w, h } = heroUploadSelectionRect();
+          const scale = heroUploadCanvas.width / heroUploadSrcImg.naturalWidth;
+          heroUploadCtx.fillStyle = "rgba(0,0,0,0.45)";
+          heroUploadCtx.fillRect(0, 0, heroUploadCanvas.width, heroUploadCanvas.height);
+          heroUploadCtx.drawImage(heroUploadSrcImg, x / scale, y / scale, w / scale, h / scale, x, y, w, h);
+          heroUploadCtx.strokeStyle = "#6b9080";
+          heroUploadCtx.lineWidth = 2;
+          heroUploadCtx.strokeRect(x, y, w, h);
+        }
+      }
+
+      function heroUploadSelectionRect() {
+        const x = Math.min(heroUploadStart.x, heroUploadEnd.x);
+        const y = Math.min(heroUploadStart.y, heroUploadEnd.y);
+        const w = Math.abs(heroUploadEnd.x - heroUploadStart.x);
+        const h = Math.abs(heroUploadEnd.y - heroUploadStart.y);
+        return { x, y, w, h };
+      }
+
+      function startHeroUploadCrop(pos) {
+        heroUploadStart = pos;
+        heroUploadEnd = null;
+        heroUploadDragging = true;
+        document.getElementById("heroUploadCropPreview").style.display = "none";
+      }
+
+      function endHeroUploadCrop(pos) {
+        if (!heroUploadDragging) return;
+        heroUploadDragging = false;
+        heroUploadEnd = pos;
+        redrawHeroUpload();
+        const { w, h } = heroUploadSelectionRect();
+        const btn = document.getElementById("heroUploadCropBtn");
+        btn.textContent = w > 10 && h > 10 ? "Crop selection →" : "Use full image →";
+      }
+
+      function clearHeroUploadCrop() {
+        heroUploadStart = null;
+        heroUploadEnd = null;
+        state.heroBlob = null;
+        drawHeroUploadCanvas();
+        document.getElementById("heroUploadCropBtn").textContent = "Use full image →";
+        document.getElementById("heroUploadCropPreview").style.display = "none";
+      }
+
+      function confirmHeroUploadCrop() {
+        const hasSelection = heroUploadStart && heroUploadEnd &&
+          heroUploadSelectionRect().w > 10 && heroUploadSelectionRect().h > 10;
+
+        const srcCanvas = hasSelection ? (() => {
+          const { x, y, w, h } = heroUploadSelectionRect();
+          const tmp = document.createElement("canvas");
+          tmp.width = w;
+          tmp.height = h;
+          tmp.getContext("2d").drawImage(heroUploadCanvas, x, y, w, h, 0, 0, w, h);
+          return tmp;
+        })() : heroUploadCanvas;
+
+        srcCanvas.toBlob(
+          (blob) => {
+            state.heroBlob = blob;
+            document.getElementById("heroUploadCropPreviewImg").src = URL.createObjectURL(blob);
+            document.getElementById("heroUploadCropPreview").style.display = "block";
+          },
+          "image/webp",
+          0.9,
+        );
+      }
+
+      function resetHeroUpload() {
+        document.getElementById("heroUploadCropArea").style.display = "none";
+        document.getElementById("heroUploadZone").style.display = "block";
+        document.getElementById("heroFileInput").value = "";
+        document.getElementById("heroUploadCropPreview").style.display = "none";
+        heroUploadStart = null;
+        heroUploadEnd = null;
+        heroUploadSrcImg = null;
+        heroUploadRotation = 0;
+        state.heroBlob = null;
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -1041,9 +1525,10 @@
         drawCropCanvas();
         if (cropStart && cropEnd) {
           const { x, y, w, h } = selectionRect();
+          const scale = cropCanvas.width / cropImg.naturalWidth;
           cropCtx.fillStyle = "rgba(0,0,0,0.45)";
           cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
-          cropCtx.drawImage(cropImg, x, y, w, h, x, y, w, h);
+          cropCtx.drawImage(cropImg, x / scale, y / scale, w / scale, h / scale, x, y, w, h);
           cropCtx.strokeStyle = "#7ab090";
           cropCtx.lineWidth = 2;
           cropCtx.strokeRect(x, y, w, h);
@@ -1103,6 +1588,194 @@
       }
 
       // ─────────────────────────────────────────────────────────────
+      // Column splitter
+      // ─────────────────────────────────────────────────────────────
+      function toggleColumnSplitter() {
+        const el = document.getElementById("columnSplitter");
+        const btn = document.getElementById("columnToggleBtn");
+        if (el.style.display === "none") {
+          el.style.display = "block";
+          btn.textContent = "📏 Columns ✓";
+          btn.style.color = "var(--accent)";
+          initSplitCanvas();
+        } else {
+          el.style.display = "none";
+          btn.textContent = "📏 Columns";
+          btn.style.color = "";
+        }
+      }
+
+      function initSplitCanvas() {
+        splitCanvas = document.getElementById("splitCanvas");
+        splitCtx = splitCanvas.getContext("2d");
+        if (!cropImg) return;
+
+        const maxW = splitCanvas.parentElement.clientWidth;
+        const scale = Math.min(1, maxW / cropImg.naturalWidth);
+        splitCanvas.width = cropImg.naturalWidth * scale;
+        splitCanvas.height = cropImg.naturalHeight * scale;
+        drawSplitCanvas();
+
+        splitCanvas.addEventListener("mousedown", startSplitDrag);
+        splitCanvas.addEventListener("mousemove", moveSplitDrag);
+        splitCanvas.addEventListener("mouseup", () => (splitDragging = false));
+        splitCanvas.addEventListener(
+          "touchstart",
+          (e) => {
+            e.preventDefault();
+            startSplitDrag(touchXY(e));
+          },
+          { passive: false },
+        );
+        splitCanvas.addEventListener(
+          "touchmove",
+          (e) => {
+            e.preventDefault();
+            moveSplitDrag(touchXY(e));
+          },
+          { passive: false },
+        );
+        splitCanvas.addEventListener("touchend", () => (splitDragging = false), {
+          passive: false,
+        });
+      }
+
+      function drawSplitCanvas() {
+        if (!cropImg || !splitCanvas) return;
+        splitCtx.drawImage(cropImg, 0, 0, splitCanvas.width, splitCanvas.height);
+        const lineX = splitX * splitCanvas.width;
+        splitCtx.strokeStyle = "#6b9080";
+        splitCtx.lineWidth = 3;
+        splitCtx.setLineDash([10, 5]);
+        splitCtx.beginPath();
+        splitCtx.moveTo(lineX, 0);
+        splitCtx.lineTo(lineX, splitCanvas.height);
+        splitCtx.stroke();
+        splitCtx.setLineDash([]);
+        splitCtx.fillStyle = "#6b9080";
+        splitCtx.beginPath();
+        splitCtx.arc(lineX, splitCanvas.height / 2, 12, 0, Math.PI * 2);
+        splitCtx.fill();
+        splitCtx.fillStyle = "#fff";
+        splitCtx.font = "bold 14px sans-serif";
+        splitCtx.textAlign = "center";
+        splitCtx.textBaseline = "middle";
+        splitCtx.fillText("⟺", lineX, splitCanvas.height / 2);
+      }
+
+      function startSplitDrag(e) {
+        const rect = splitCanvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (splitCanvas.width / rect.width);
+        if (Math.abs(x - splitX * splitCanvas.width) < 24) splitDragging = true;
+      }
+
+      function moveSplitDrag(e) {
+        if (!splitDragging) return;
+        const rect = splitCanvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (splitCanvas.width / rect.width);
+        splitX = Math.max(0.1, Math.min(0.9, x / splitCanvas.width));
+        drawSplitCanvas();
+      }
+
+      async function runColumnOCR() {
+        const msgEl = document.getElementById("scanMsg");
+        showMsg(msgEl, "info", "Running column OCR…", true);
+
+        if (!cropImg) {
+          showMsg(msgEl, "error", "No image loaded.");
+          return;
+        }
+
+        // Apply rotation first (same as regular runOCR)
+        const rotatedBlob = await getRotatedBlob();
+        if (scanRotation !== 0) {
+          const url = URL.createObjectURL(rotatedBlob);
+          await new Promise((resolve) => {
+            cropImg = new Image();
+            cropImg.onload = resolve;
+            cropImg.src = url;
+          });
+          state.uploadedFile = rotatedBlob;
+        }
+
+        const splitPx = Math.round(cropImg.naturalWidth * splitX);
+        const rightWidth = cropImg.naturalWidth - splitPx;
+        const h = cropImg.naturalHeight;
+
+        const leftC = document.createElement("canvas");
+        leftC.width = splitPx;
+        leftC.height = h;
+        leftC.getContext("2d").drawImage(cropImg, 0, 0, splitPx, h, 0, 0, splitPx, h);
+
+        const rightC = document.createElement("canvas");
+        rightC.width = rightWidth;
+        rightC.height = h;
+        rightC.getContext("2d").drawImage(cropImg, splitPx, 0, rightWidth, h, 0, 0, rightWidth, h);
+
+        try {
+          const [leftBlob, rightBlob] = await Promise.all([
+            new Promise((res) => leftC.toBlob(res, "image/jpeg", 0.92)),
+            new Promise((res) => rightC.toBlob(res, "image/jpeg", 0.92)),
+          ]);
+
+          const makeForm = (blob, name) => {
+            const f = new FormData();
+            f.append("file", blob, name);
+            return f;
+          };
+
+          const [leftRes, rightRes] = await Promise.all([
+            fetch("/api/ocr", { method: "POST", body: makeForm(leftBlob, "left.jpg") }),
+            fetch("/api/ocr", { method: "POST", body: makeForm(rightBlob, "right.jpg") }),
+          ]);
+
+          if (!leftRes.ok) throw new Error((await leftRes.json()).detail);
+          if (!rightRes.ok) throw new Error((await rightRes.json()).detail);
+
+          const leftText = (await leftRes.json()).text;
+          const rightText = (await rightRes.json()).text;
+          const pageText = leftText + "\n\n" + rightText;
+
+          if (state.appendingPage) {
+            state.ocrText = state.ocrText + "\n\n--- page break ---\n\n" + pageText;
+            state.appendingPage = false;
+          } else {
+            state.ocrText = pageText;
+          }
+          document.getElementById("ocrText").value = state.ocrText;
+          msgEl.innerHTML = "";
+          setStep(2);
+          showPanel("review");
+        } catch (e) {
+          showMsg(msgEl, "error", `Column OCR failed: ${e.message}`);
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // Claude Vision (skip OCR entirely)
+      // ─────────────────────────────────────────────────────────────
+      async function runVisionDirect() {
+        const btn = document.getElementById("visionBtn");
+        const msgEl = document.getElementById("reviewMsg");
+        btn.disabled = true;
+        btn.textContent = "Sending to Claude…";
+        msgEl.innerHTML = "";
+
+        try {
+          const formData = new FormData();
+          formData.append("file", state.uploadedFile);
+          const res = await fetch("/api/structure-image", { method: "POST", body: formData });
+          if (!res.ok) throw new Error((await res.json()).detail);
+          state.structuredData = await res.json();
+          goToHero();
+        } catch (e) {
+          showMsg(msgEl, "error", e.message);
+          btn.disabled = false;
+          btn.textContent = "⚡ Send image to Claude";
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────
       // Import
       // ─────────────────────────────────────────────────────────────
       async function startImport() {
@@ -1110,24 +1783,29 @@
 
         const heroBlob = state.heroMode !== "skip" ? state.heroBlob : null;
 
-        // Step 1: structure via Claude
-        addProcessStep("Sending text to Claude…", "loading");
-        setProgress(10);
-
+        // Step 1: structure via Claude (skip if vision already did this)
         let structured;
-        try {
-          const res = await fetch("/api/structure", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: state.ocrText }),
-          });
-          if (!res.ok) throw new Error((await res.json()).detail);
-          structured = await res.json();
-          addProcessStep(`Parsed: "${structured.name}"`, "done");
+        if (state.structuredData) {
+          structured = state.structuredData;
+          addProcessStep(`Parsed via vision: "${structured.name}"`, "done");
           setProgress(40);
-        } catch (e) {
-          addProcessStep(`Failed: ${e.message}`, "error");
-          return;
+        } else {
+          addProcessStep("Sending text to Claude…", "loading");
+          setProgress(10);
+          try {
+            const res = await fetch("/api/structure", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: state.ocrText }),
+            });
+            if (!res.ok) throw new Error((await res.json()).detail);
+            structured = await res.json();
+            addProcessStep(`Parsed: "${structured.name}"`, "done");
+            setProgress(40);
+          } catch (e) {
+            addProcessStep(`Failed: ${e.message}`, "error");
+            return;
+          }
         }
 
         // Step 2: push to Mealie
@@ -1156,10 +1834,18 @@
         const div = document.createElement("div");
         div.className =
           "alert alert-" + (status === "done" ? "info" : status === "error" ? "error" : "info");
-        div.innerHTML =
-          status === "loading"
-            ? `<div class="spinner"></div><span>${text}</span>`
-            : `<span>${status === "done" ? "✓" : "✗"}</span><span>${text}</span>`;
+        if (status === "loading") {
+          const s = document.createElement("div");
+          s.className = "spinner";
+          div.appendChild(s);
+        } else {
+          const icon = document.createElement("span");
+          icon.textContent = status === "done" ? "✓" : "✗";
+          div.appendChild(icon);
+        }
+        const span = document.createElement("span");
+        span.textContent = text;
+        div.appendChild(span);
         container.appendChild(div);
       }
 
@@ -1172,8 +1858,13 @@
         const link = state.mealieUrl ? `${state.mealieUrl}/g/home/r/${slug}` : `#`;
         document.getElementById("recipeLink").href = link;
         if (warning) {
-          document.getElementById("successWarn").innerHTML =
-            `<div class="alert alert-warn" style="margin-bottom:16px;">⚠️ ${warning}</div>`;
+          const warnEl = document.getElementById("successWarn");
+          const div = document.createElement("div");
+          div.className = "alert alert-warn";
+          div.style.marginBottom = "16px";
+          div.textContent = "⚠️ " + warning;
+          warnEl.innerHTML = "";
+          warnEl.appendChild(div);
         }
         showView("success");
       }
@@ -1186,8 +1877,19 @@
         state.ocrText = "";
         state.heroBlob = null;
         state.heroMode = "crop";
+        state.structuredData = null;
+        state.appendingPage = false;
+        scanRotation = 0;
         cropStart = null;
         cropEnd = null;
+        splitX = 0.5;
+        document.getElementById("scanPreview").style.display = "none";
+        document.getElementById("columnSplitter").style.display = "none";
+        const colBtn = document.getElementById("columnToggleBtn");
+        if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
+        document.getElementById("reviewMsg").innerHTML = "";
+        const vBtn = document.getElementById("visionBtn");
+        if (vBtn) { vBtn.disabled = false; vBtn.textContent = "⚡ Claude Vision"; }
 
         document.getElementById("ocrText").value = "";
         document.getElementById("scanMsg").innerHTML = "";
@@ -1195,8 +1897,14 @@
         document.getElementById("successWarn").innerHTML = "";
         document.getElementById("progressFill").style.width = "0%";
         document.getElementById("cropPreview").style.display = "none";
-        document.getElementById("heroUploadPreview").style.display = "none";
+        document.getElementById("heroUploadCropPreview").style.display = "none";
+        document.getElementById("heroUploadCropArea").style.display = "none";
+        document.getElementById("heroUploadZone").style.display = "block";
         document.getElementById("cropBtn").disabled = true;
+        heroUploadStart = null;
+        heroUploadEnd = null;
+        heroUploadSrcImg = null;
+        heroUploadRotation = 0;
 
         selectHeroTab("crop");
         setStep(1);
@@ -1209,7 +1917,18 @@
       // Helpers
       // ─────────────────────────────────────────────────────────────
       function showMsg(el, type, text, spinner = false) {
-        el.innerHTML = `<div class="alert alert-${type}">${spinner ? '<div class="spinner"></div>' : ""}<span>${text}</span></div>`;
+        const div = document.createElement("div");
+        div.className = `alert alert-${type}`;
+        if (spinner) {
+          const s = document.createElement("div");
+          s.className = "spinner";
+          div.appendChild(s);
+        }
+        const span = document.createElement("span");
+        span.textContent = text;
+        div.appendChild(span);
+        el.innerHTML = "";
+        el.appendChild(div);
       }
 
       // ─────────────────────────────────────────────────────────────

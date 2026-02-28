@@ -1,4 +1,22 @@
 config/
 __pycache__/
 *.pyc
+*.pyo
 .env
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+dist/
+*.egg-info/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

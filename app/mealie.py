@@ -1,10 +1,22 @@
+import contextlib
+import re
 import uuid
 
 import httpx
 
+from app.config import AppConfig
 
-def get_headers(token: str) -> dict:
+_SLUG_RE = re.compile(r"^[a-zA-Z0-9\-]+$")
+
+
+def _headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+def _validate_slug(slug: str) -> None:
+    """Raise ValueError if slug contains unexpected characters."""
+    if not _SLUG_RE.match(slug):
+        raise ValueError(f"Unexpected slug format from Mealie: {slug!r}")
 
 
 async def fetch_user_info(mealie_url: str, token: str) -> dict:
@@ -12,7 +24,7 @@ async def fetch_user_info(mealie_url: str, token: str) -> dict:
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             f"{mealie_url}/api/users/self",
-            headers=get_headers(token),
+            headers=_headers(token),
             timeout=10,
         )
         resp.raise_for_status()
@@ -24,23 +36,28 @@ async def fetch_user_info(mealie_url: str, token: str) -> dict:
         }
 
 
-async def create_recipe(mealie_url: str, token: str, name: str) -> tuple[str, str]:
+async def create_recipe(
+    mealie_url: str,
+    token: str,
+    name: str,
+    http_client: httpx.AsyncClient | None = None,
+) -> tuple[str, str]:
     """Create a blank recipe, return (slug, recipe_id)."""
-    async with httpx.AsyncClient() as client:
-        # Create blank recipe — returns slug string
+    cm = contextlib.nullcontext(http_client) if http_client else httpx.AsyncClient()
+    async with cm as client:
         resp = await client.post(
             f"{mealie_url}/api/recipes",
-            headers={**get_headers(token), "Content-Type": "application/json"},
+            headers={**_headers(token), "Content-Type": "application/json"},
             json={"name": name},
             timeout=10,
         )
         resp.raise_for_status()
         slug = resp.json()
+        _validate_slug(slug)
 
-        # Fetch full recipe to get the ID
         resp = await client.get(
             f"{mealie_url}/api/recipes/{slug}",
-            headers=get_headers(token),
+            headers=_headers(token),
             timeout=10,
         )
         resp.raise_for_status()
@@ -48,12 +65,19 @@ async def create_recipe(mealie_url: str, token: str, name: str) -> tuple[str, st
         return slug, recipe["id"]
 
 
-async def update_recipe(mealie_url: str, token: str, slug: str, payload: dict) -> dict:
+async def update_recipe(
+    mealie_url: str,
+    token: str,
+    slug: str,
+    payload: dict,
+    http_client: httpx.AsyncClient | None = None,
+) -> dict:
     """PUT the full recipe JSON to Mealie."""
-    async with httpx.AsyncClient() as client:
+    cm = contextlib.nullcontext(http_client) if http_client else httpx.AsyncClient()
+    async with cm as client:
         resp = await client.put(
             f"{mealie_url}/api/recipes/{slug}",
-            headers={**get_headers(token), "Content-Type": "application/json"},
+            headers={**_headers(token), "Content-Type": "application/json"},
             json=payload,
             timeout=15,
         )
@@ -62,26 +86,32 @@ async def update_recipe(mealie_url: str, token: str, slug: str, payload: dict) -
 
 
 async def upload_hero_image(
-    mealie_url: str, token: str, recipe_id: str, image_bytes: bytes
-) -> None:
-    """Upload hero image to Mealie."""
-    async with httpx.AsyncClient() as client:
+    mealie_url: str,
+    token: str,
+    slug: str,
+    image_bytes: bytes,
+    http_client: httpx.AsyncClient | None = None,
+) -> str:
+    """Upload hero image to Mealie. Returns the image token to set on the recipe."""
+    cm = contextlib.nullcontext(http_client) if http_client else httpx.AsyncClient()
+    async with cm as client:
         resp = await client.put(
-            f"{mealie_url}/api/media/recipes/{recipe_id}/images/original.webp",
-            headers=get_headers(token),
+            f"{mealie_url}/api/recipes/{slug}/image",
+            headers=_headers(token),
             files={"image": ("original.webp", image_bytes, "image/webp")},
+            data={"extension": "webp"},
             timeout=30,
         )
         resp.raise_for_status()
+        return resp.json()["image"]
 
 
 def build_recipe_payload(
     structured: dict,
     recipe_id: str,
     slug: str,
-    user_id: str,
-    household_id: str,
-    group_id: str,
+    config: AppConfig,
+    image_token: str | None = None,
 ) -> dict:
     """Convert Claude-structured recipe data into a valid Mealie JSON payload."""
     ingredients = [
@@ -117,12 +147,12 @@ def build_recipe_payload(
 
     return {
         "id": recipe_id,
-        "userId": user_id,
-        "householdId": household_id,
-        "groupId": group_id,
+        "userId": config.mealie_user_id,
+        "householdId": config.mealie_household_id,
+        "groupId": config.mealie_group_id,
         "name": structured["name"],
         "slug": slug,
-        "image": None,
+        "image": image_token,
         "recipeServings": servings,
         "recipeYieldQuantity": servings,
         "recipeYield": structured.get("recipeYield") or "",

@@ -1,9 +1,10 @@
 import io
+import json
+from typing import Optional
+
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional
 from PIL import Image
 
 from app import config as cfg
@@ -95,14 +96,12 @@ async def import_recipe(
     structured_json: str = Form(...),
     hero_image: Optional[UploadFile] = File(None),
 ):
-    import json as _json
-
     config = cfg.load_config()
     if not config:
         raise HTTPException(status_code=400, detail="App not configured")
 
     try:
-        structured = _json.loads(structured_json)
+        structured = json.loads(structured_json)
     except Exception:
         raise HTTPException(status_code=422, detail="Invalid structured JSON")
 

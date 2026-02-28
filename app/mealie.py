@@ -1,6 +1,6 @@
 import uuid
+
 import httpx
-from typing import Optional
 
 
 def get_headers(token: str) -> dict:
@@ -82,9 +82,8 @@ def build_recipe_payload(
     group_id: str,
 ) -> dict:
     """Convert Claude-structured recipe data into a valid Mealie JSON payload."""
-    ingredients = []
-    for i, ing in enumerate(structured.get("ingredients", []), start=1):
-        ingredients.append({
+    ingredients = [
+        {
             "quantity": None,
             "unit": None,
             "food": None,
@@ -93,17 +92,20 @@ def build_recipe_payload(
             "title": ing.get("sectionTitle"),
             "originalText": ing["text"],
             "referenceId": str(uuid.uuid4()),
-        })
+        }
+        for ing in structured.get("ingredients", [])
+    ]
 
-    instructions = []
-    for step in structured.get("instructions", []):
-        instructions.append({
+    instructions = [
+        {
             "id": None,
             "title": step.get("sectionTitle") or "",
             "summary": "",
             "text": step["text"],
             "ingredientReferences": [],
-        })
+        }
+        for step in structured.get("instructions", [])
+    ]
 
     notes = []
     if structured.get("notes"):

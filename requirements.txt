@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+pytesseract
+Pillow
+anthropic
+httpx
+python-multipart

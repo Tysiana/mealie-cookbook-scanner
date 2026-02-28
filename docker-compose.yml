@@ -1,0 +1,12 @@
+services:
+  mealie-scanner:
+    build: .
+    container_name: mealie-scanner
+    ports:
+      - "8090:8090"
+    volumes:
+      - mealie-scanner-config:/app/config
+    restart: unless-stopped
+
+volumes:
+  mealie-scanner-config:

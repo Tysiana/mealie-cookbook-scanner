@@ -1,5 +1,5 @@
 import io
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -35,7 +35,10 @@ def health():
 
 @app.get("/api/config")
 def get_config():
-    return {"configured": cfg.is_configured()}
+    config = cfg.load_config()
+    if not config or not cfg.is_configured():
+        return {"configured": False}
+    return {"configured": True, "mealie_url": config["mealie_url"]}
 
 
 @app.post("/api/config")
@@ -89,7 +92,7 @@ async def structure(payload: StructurePayload):
 
 @app.post("/api/import")
 async def import_recipe(
-    structured_json: str,
+    structured_json: str = Form(...),
     hero_image: Optional[UploadFile] = File(None),
 ):
     import json as _json

@@ -59,26 +59,44 @@
 
 ---
 
-## In Progress / Known Issues
+### Security & Code Quality (code-review pass)
+- [x] XSS — `showMsg`, `addProcessStep`, `showSuccess` use DOM API instead of `innerHTML`
+- [x] `GET /api/config` returns `mealie_token_set`/`anthropic_key_set` booleans, never raw credentials
+- [x] `AppConfig` dataclass replaces raw `dict` throughout backend
+- [x] `main.py` split into `app/routes/{config,ocr,structure,import_recipe}.py`
+- [x] `app/image_utils.py` — image helpers extracted from main.py
+- [x] `mealie.py`: shared `httpx.AsyncClient` across import flow; `_validate_slug`; `_headers` private
+- [x] `claude.py`: `SYSTEM_PROMPT` → `_SYSTEM_PROMPT`
+- [x] File upload: content-type allowlist + 10 MB size guard before `read()`
+- [x] `json.JSONDecodeError` caught specifically; entity context in all error messages
+- [x] `.gitignore`: added `.ruff_cache/`, `.pytest_cache/`, editor/OS noise
 
-- [ ] Column splitter `drawImage` source coords use canvas-space (same scale bug) — low priority, OCR text quality acceptable
-- [ ] Hero image upload: needs real-world test post-fixes (upload + token flow now correct)
+### Distribution
+- [x] `README.md` — what it does, prerequisites, one-command install, how it works, layout
+- [ ] GitHub repo created + code pushed
+- [ ] GitHub Actions — build + push to `ghcr.io` on push to `main`
+- [ ] Final run command with `ghcr.io/YOURUSERNAME/mealie-cookbook-scanner:latest`
+
+### Testing
+- [x] `tests/` scaffold — `conftest.py`, fixtures, `pytest.ini`
+- [x] `tests/test_config.py` — load/save/validation unit tests
+- [x] `tests/test_image_utils.py` — resize + format unit tests
+- [x] `tests/test_mealie.py` — slug validation + payload builder tests
+- [x] `tests/test_routes_config.py` — HTTP-level integration tests for config endpoints
+- [x] `pytest` + `pytest-asyncio` added to `requirements.txt`
 
 ---
 
 ## Remaining
 
 ### Distribution
-- [ ] `README.md` — what it does, prerequisites, one-command install, how it works
 - [ ] GitHub repo created + code pushed
 - [ ] GitHub Actions — build + push to `ghcr.io` on push to `main`
-- [ ] Final run command with `ghcr.io/YOURUSERNAME/mealie-cookbook-scanner:latest`
 
 ### Nice to Have / Future
 - [ ] Deploy to home Debian server (alongside Mealie on port 8090)
-- [ ] Error handling paths (bad token, OCR failure, Claude failure)
 - [ ] Mobile UX pass — camera capture on phone
-- [ ] Multi-page recipe support (concatenate OCR from multiple images)
+- [ ] Integration tests for OCR, structure, import routes (require mocked Tesseract / Anthropic / Mealie)
 
 ---
 

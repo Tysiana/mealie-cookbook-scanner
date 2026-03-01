@@ -981,7 +981,7 @@
             state.savedConfig = data;
             document.getElementById("reconfigBtn").style.display = "block";
             showView("upload");
-            await initUploadWidget();
+            initUploadWidget();
             initCropCanvas();
           } else {
             showView("config");
@@ -1081,7 +1081,7 @@
           state.savedConfig = { mealie_url: url, mealie_token_set: true, llm_key_set: true, llm_provider: llmProvider };
           document.getElementById("reconfigBtn").style.display = "block";
           showView("upload");
-          await initUploadWidget();
+          initUploadWidget();
           initCropCanvas();
         } catch (e) {
           showMsg(msgEl, "error", e.message);
@@ -1093,9 +1093,9 @@
       // ─────────────────────────────────────────────────────────────
       // Upload widget (camera on mobile, dropzone on desktop)
       // ─────────────────────────────────────────────────────────────
-      async function initUploadWidget() {
+      function initUploadWidget() {
         const container = document.getElementById("uploadWidget");
-        const mobile = await isMobileCamera();
+        const mobile = isMobile();
 
         if (mobile) {
           container.innerHTML = `
@@ -1121,14 +1121,8 @@
         }
       }
 
-      async function isMobileCamera() {
-        try {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          const hasVid = devices.some((d) => d.kind === "videoinput");
-          return hasVid && /Mobi|Android|iPad|iPhone/i.test(navigator.userAgent);
-        } catch {
-          return false;
-        }
+      function isMobile() {
+        return /Mobi|Android|iPad|iPhone/i.test(navigator.userAgent);
       }
 
       function setupDropzone(id) {

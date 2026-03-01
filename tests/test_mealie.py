@@ -11,7 +11,8 @@ from app.mealie import _validate_slug, build_recipe_payload
 _SAMPLE_CONFIG = AppConfig(
     mealie_url="http://mealie.test",
     mealie_token="tok",
-    anthropic_key="key",
+    llm_provider="anthropic",
+    llm_key="key",
     mealie_user_id="user-1",
     mealie_household_id="hh-1",
     mealie_group_id="grp-1",

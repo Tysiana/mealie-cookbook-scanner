@@ -24,7 +24,8 @@ def sample_config() -> AppConfig:
     return AppConfig(
         mealie_url="http://mealie.test",
         mealie_token="test-token-123",
-        anthropic_key="sk-ant-test-key",
+        llm_provider="anthropic",
+        llm_key="sk-ant-test-key",
         mealie_user_id="user-uuid-1",
         mealie_household_id="household-uuid-1",
         mealie_group_id="group-uuid-1",
@@ -42,7 +43,8 @@ def config_file(tmp_path: Path, sample_config: AppConfig) -> Path:
             {
                 "mealie_url": sample_config.mealie_url,
                 "mealie_token": sample_config.mealie_token,
-                "anthropic_key": sample_config.anthropic_key,
+                "llm_provider": sample_config.llm_provider,
+                "llm_key": sample_config.llm_key,
                 "mealie_user_id": sample_config.mealie_user_id,
                 "mealie_household_id": sample_config.mealie_household_id,
                 "mealie_group_id": sample_config.mealie_group_id,

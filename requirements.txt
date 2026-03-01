@@ -3,6 +3,7 @@ uvicorn[standard]
 pytesseract
 Pillow
 anthropic
+google-genai
 httpx
 python-multipart
 

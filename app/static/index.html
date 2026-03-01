@@ -683,8 +683,15 @@
             <p class="hint">Profile → API Tokens → Create Token</p>
           </div>
           <div class="field">
-            <label for="anthropicKey">Anthropic API Key</label>
-            <input type="password" id="anthropicKey" placeholder="sk-ant-..." autocomplete="off" />
+            <label for="llmProvider">LLM Provider</label>
+            <select id="llmProvider" onchange="updateLlmKeyPlaceholder()">
+              <option value="anthropic">Anthropic (Claude Haiku)</option>
+              <option value="gemini">Google (Gemini Flash)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="llmKey">LLM API Key</label>
+            <input type="password" id="llmKey" placeholder="Anthropic API key (console.anthropic.com)" autocomplete="off" />
           </div>
 
           <div id="configMsg"></div>
@@ -1002,12 +1009,26 @@
             document.getElementById("mealieToken").placeholder = "Re-enter your Mealie token to reconfigure";
             document.getElementById("mealieToken").value = "";
           }
-          if (state.savedConfig.anthropic_key_set) {
-            document.getElementById("anthropicKey").placeholder = "Re-enter your Anthropic key to reconfigure";
-            document.getElementById("anthropicKey").value = "";
+          if (state.savedConfig.llm_key_set) {
+            document.getElementById("llmKey").placeholder = "Re-enter your LLM key to reconfigure";
+            document.getElementById("llmKey").value = "";
+          }
+          if (state.savedConfig.llm_provider) {
+            document.getElementById("llmProvider").value = state.savedConfig.llm_provider;
+            updateLlmKeyPlaceholder();
           }
         }
         showView("config");
+      }
+
+      function updateLlmKeyPlaceholder() {
+        const provider = document.getElementById("llmProvider").value;
+        const input = document.getElementById("llmKey");
+        if (provider === "gemini") {
+          input.placeholder = "Google AI Studio key (aistudio.google.com)";
+        } else {
+          input.placeholder = "Anthropic API key (console.anthropic.com)";
+        }
       }
 
       async function saveConfig() {
@@ -1019,7 +1040,8 @@
 
         const url = document.getElementById("mealieUrl").value.trim();
         const token = document.getElementById("mealieToken").value.trim();
-        const apiKey = document.getElementById("anthropicKey").value.trim();
+        const llmProvider = document.getElementById("llmProvider").value;
+        const apiKey = document.getElementById("llmKey").value.trim();
 
         if (!url || !token || !apiKey) {
           showMsg(msgEl, "error", "Please fill in all fields.");
@@ -1032,11 +1054,11 @@
           const res = await fetch("/api/config", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mealie_url: url, mealie_token: token, anthropic_key: apiKey }),
+            body: JSON.stringify({ mealie_url: url, mealie_token: token, llm_provider: llmProvider, llm_key: apiKey }),
           });
           if (!res.ok) throw new Error((await res.json()).detail || "Connection failed");
           state.mealieUrl = url;
-          state.savedConfig = { mealie_url: url, mealie_token_set: true, anthropic_key_set: true };
+          state.savedConfig = { mealie_url: url, mealie_token_set: true, llm_key_set: true, llm_provider: llmProvider };
           document.getElementById("reconfigBtn").style.display = "block";
           showView("upload");
           await initUploadWidget();

@@ -8,7 +8,8 @@ CONFIG_PATH = Path("/app/config/config.json")
 _REQUIRED_FIELDS = [
     "mealie_url",
     "mealie_token",
-    "anthropic_key",
+    "llm_provider",
+    "llm_key",
     "mealie_user_id",
     "mealie_household_id",
     "mealie_group_id",
@@ -19,7 +20,8 @@ _REQUIRED_FIELDS = [
 class AppConfig:
     mealie_url: str
     mealie_token: str
-    anthropic_key: str
+    llm_provider: str
+    llm_key: str
     mealie_user_id: str
     mealie_household_id: str
     mealie_group_id: str
@@ -32,12 +34,17 @@ def load_config() -> Optional[AppConfig]:
     try:
         with open(CONFIG_PATH) as f:
             data = json.load(f)
+        # Migration shim: existing installs with anthropic_key get mapped to the new fields
+        if "anthropic_key" in data and "llm_key" not in data:
+            data["llm_provider"] = "anthropic"
+            data["llm_key"] = data["anthropic_key"]
         if not all(data.get(k) for k in _REQUIRED_FIELDS):
             return None
         return AppConfig(
             mealie_url=data["mealie_url"],
             mealie_token=data["mealie_token"],
-            anthropic_key=data["anthropic_key"],
+            llm_provider=data["llm_provider"],
+            llm_key=data["llm_key"],
             mealie_user_id=data["mealie_user_id"],
             mealie_household_id=data["mealie_household_id"],
             mealie_group_id=data["mealie_group_id"],

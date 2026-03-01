@@ -14,7 +14,8 @@ from app.config import AppConfig
 _FULL_CONFIG = {
     "mealie_url": "http://mealie.test",
     "mealie_token": "tok",
-    "anthropic_key": "key",
+    "llm_provider": "anthropic",
+    "llm_key": "key",
     "mealie_user_id": "u1",
     "mealie_household_id": "h1",
     "mealie_group_id": "g1",
@@ -62,10 +63,11 @@ def test_get_config_returns_configured(configured_client):
     assert data["configured"] is True
     assert data["mealie_url"] == "http://mealie.test"
     assert data["mealie_token_set"] is True
-    assert data["anthropic_key_set"] is True
+    assert data["llm_key_set"] is True
+    assert data["llm_provider"] == "anthropic"
     # Raw credentials must NOT be present
     assert "mealie_token" not in data
-    assert "anthropic_key" not in data
+    assert "llm_key" not in data
 
 
 def test_get_config_returns_unconfigured(unconfigured_client):
@@ -96,7 +98,8 @@ def test_post_config_saves_on_success(tmp_path: Path):
                 json={
                     "mealie_url": "http://mealie.test/",
                     "mealie_token": "tok",
-                    "anthropic_key": "key",
+                    "llm_provider": "anthropic",
+                    "llm_key": "key",
                 },
             )
     assert r.status_code == 200
@@ -120,7 +123,8 @@ def test_post_config_returns_400_on_mealie_error(tmp_path: Path):
                 json={
                     "mealie_url": "http://bad.host",
                     "mealie_token": "tok",
-                    "anthropic_key": "key",
+                    "llm_provider": "gemini",
+                    "llm_key": "key",
                 },
             )
     assert r.status_code == 400

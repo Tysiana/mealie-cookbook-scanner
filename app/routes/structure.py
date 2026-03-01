@@ -4,8 +4,8 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app import config as cfg
-from app.claude import structure_recipe, structure_recipe_from_image
 from app.image_utils import prepare_vision_image
+from app.llm import get_provider
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +25,11 @@ async def structure(payload: StructurePayload):
     if not config:
         raise HTTPException(status_code=400, detail="App not configured")
     try:
-        structured = structure_recipe(payload.text, config.anthropic_key)
+        structured = get_provider(config).structure_recipe(payload.text)
     except Exception as e:
         raise HTTPException(
             status_code=422,
-            detail=f"Claude extraction failed on {len(payload.text)} chars of text: {e}",
+            detail=f"LLM provider extraction failed on {len(payload.text)} chars of text: {e}",
         )
     return structured
 
@@ -50,12 +50,12 @@ async def structure_image(file: UploadFile = File(...)):
         if len(image_bytes) > _MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 10 MB)")
         compressed = prepare_vision_image(image_bytes)
-        structured = structure_recipe_from_image(compressed, config.anthropic_key)
+        structured = get_provider(config).structure_recipe_from_image(compressed)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=422,
-            detail=f"Claude vision failed on {file.filename!r}: {e}",
+            detail=f"LLM provider vision failed on {file.filename!r}: {e}",
         )
     return structured

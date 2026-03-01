@@ -16,7 +16,8 @@ _MAX_UPLOAD_MB = 10
 class ConfigPayload(BaseModel):
     mealie_url: str
     mealie_token: str
-    anthropic_key: str
+    llm_provider: str
+    llm_key: str
 
 
 @router.get("/health")
@@ -34,7 +35,8 @@ def get_config():
         "configured": True,
         "mealie_url": config.mealie_url,
         "mealie_token_set": True,
-        "anthropic_key_set": True,
+        "llm_key_set": True,
+        "llm_provider": config.llm_provider,
     }
 
 
@@ -53,7 +55,8 @@ async def save_config(payload: ConfigPayload):
         {
             "mealie_url": mealie_url,
             "mealie_token": payload.mealie_token,
-            "anthropic_key": payload.anthropic_key,
+            "llm_provider": payload.llm_provider,
+            "llm_key": payload.llm_key,
             **uuids,
         }
     )

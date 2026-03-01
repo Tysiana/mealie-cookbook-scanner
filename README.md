@@ -4,6 +4,8 @@ Scan a physical recipe page → OCR it → let an AI model structure it → impo
 
 Works entirely from the browser. No cloud sync, no account needed beyond your own Mealie instance and an LLM API key.
 
+![Cookbook Scanner config screen](docs/screenshot.png)
+
 ---
 
 ## What it does

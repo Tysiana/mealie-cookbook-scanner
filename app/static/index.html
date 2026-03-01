@@ -1646,10 +1646,15 @@
         splitCtx = splitCanvas.getContext("2d");
         if (!cropImg) return;
 
+        const rotated = scanRotation === 90 || scanRotation === 270;
+        const srcW = cropImg.naturalWidth;
+        const srcH = cropImg.naturalHeight;
+        const dispW = rotated ? srcH : srcW;
+        const dispH = rotated ? srcW : srcH;
         const maxW = splitCanvas.parentElement.clientWidth;
-        const scale = Math.min(1, maxW / cropImg.naturalWidth);
-        splitCanvas.width = cropImg.naturalWidth * scale;
-        splitCanvas.height = cropImg.naturalHeight * scale;
+        const scale = Math.min(1, maxW / dispW);
+        splitCanvas.width = dispW * scale;
+        splitCanvas.height = dispH * scale;
         drawSplitCanvas();
 
         splitCanvas.addEventListener("mousedown", startSplitDrag);
@@ -1678,7 +1683,15 @@
 
       function drawSplitCanvas() {
         if (!cropImg || !splitCanvas) return;
-        splitCtx.drawImage(cropImg, 0, 0, splitCanvas.width, splitCanvas.height);
+        const rotated = scanRotation === 90 || scanRotation === 270;
+        const srcW = cropImg.naturalWidth;
+        const srcH = cropImg.naturalHeight;
+        const scale = splitCanvas.width / (rotated ? srcH : srcW);
+        splitCtx.save();
+        splitCtx.translate(splitCanvas.width / 2, splitCanvas.height / 2);
+        splitCtx.rotate((scanRotation * Math.PI) / 180);
+        splitCtx.drawImage(cropImg, (-srcW * scale) / 2, (-srcH * scale) / 2, srcW * scale, srcH * scale);
+        splitCtx.restore();
         const lineX = splitX * splitCanvas.width;
         splitCtx.strokeStyle = "#6b9080";
         splitCtx.lineWidth = 3;

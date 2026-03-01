@@ -38,44 +38,20 @@ Choose either provider in the config screen:
 
 ---
 
-## Quick start — Docker
-
-```bash
-docker run -d \
-  --name mealie-scanner \
-  -p 8090:8090 \
-  -v mealie-scanner-config:/app/config \
-  ghcr.io/tysiana/mealie-cookbook-scanner:latest
-```
-
-## Quick start — Podman
-
-```bash
-podman run -d \
-  --name mealie-scanner \
-  -p 8090:8090 \
-  -v mealie-scanner-config:/app/config \
-  --restart unless-stopped \
-  ghcr.io/tysiana/mealie-cookbook-scanner:latest
-```
-
-Open **http://localhost:8090** and follow the one-time setup wizard.
-
----
-
-## Build and run locally
+## Quick start
 
 ```bash
 git clone https://github.com/Tysiana/mealie-cookbook-scanner.git
 cd mealie-cookbook-scanner
+```
 
-# Docker
-docker build -t mealie-cookbook-scanner:latest .
-docker run -d --name mealie-scanner -p 8090:8090 \
-  -v mealie-scanner-config:/app/config \
-  mealie-cookbook-scanner:latest
+**Docker:**
+```bash
+docker compose up -d
+```
 
-# Podman
+**Podman:**
+```bash
 podman build -t mealie-cookbook-scanner:latest .
 podman run -d --name mealie-scanner -p 8090:8090 \
   -v mealie-scanner-config:/app/config \
@@ -83,11 +59,15 @@ podman run -d --name mealie-scanner -p 8090:8090 \
   mealie-cookbook-scanner:latest
 ```
 
-Or with Compose:
+Open **http://localhost:8090** and follow the one-time setup wizard.
 
-```bash
-docker compose up -d   # or: podman compose up -d
-```
+> **Pre-built image** — once the GitHub Actions workflow runs after your first push, you can also pull directly:
+> ```bash
+> podman run -d --name mealie-scanner -p 8090:8090 \
+>   -v mealie-scanner-config:/app/config \
+>   --restart unless-stopped \
+>   ghcr.io/tysiana/mealie-cookbook-scanner:latest
+> ```
 
 ---
 

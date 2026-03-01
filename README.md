@@ -1,8 +1,8 @@
 # mealie-cookbook-scanner
 
-Scan a physical recipe page → OCR it → let Claude structure it → import it straight into [Mealie](https://mealie.io).
+Scan a physical recipe page → OCR it → let an AI model structure it → import it straight into [Mealie](https://mealie.io).
 
-Works entirely from the browser. No cloud sync, no account needed beyond your own Mealie instance and an Anthropic API key.
+Works entirely from the browser. No cloud sync, no account needed beyond your own Mealie instance and an LLM API key.
 
 ---
 
@@ -10,49 +10,83 @@ Works entirely from the browser. No cloud sync, no account needed beyond your ow
 
 1. **Scan** — upload or photograph a cookbook page. Rotate and crop, or use the column splitter for two-column layouts.
 2. **OCR** — Tesseract extracts the text inside the container (no data leaves your machine for OCR).
-3. **Structure** — Claude reads the raw text (or the image directly via vision) and returns structured JSON: title, ingredients, instructions, times, servings.
+3. **Structure** — your chosen AI model reads the raw text (or the image directly via vision) and returns structured JSON: title, ingredients, instructions, times, servings.
 4. **Import** — one click sends everything to Mealie, including a hero image if you cropped one.
 
-Multi-page recipes are supported: scan the second page and append it before sending to Claude.
+Multi-page recipes are supported: scan the second page and append it before sending to the AI.
+
+---
+
+## LLM providers
+
+Choose either provider in the config screen:
+
+| Provider | Model | Key source |
+|---|---|---|
+| **Anthropic** | Claude Haiku | [console.anthropic.com](https://console.anthropic.com) — billed per use |
+| **Google** | Gemini 2.5 Flash | [aistudio.google.com](https://aistudio.google.com) — free tier available |
+
+> **Gemini free tier:** create your API key at AI Studio from a project **without billing enabled**. If you use a billing-enabled Google Cloud project the free-tier quota is zero.
 
 ---
 
 ## Prerequisites
 
-- Docker (or Podman with the Docker CLI shim)
+- Docker **or** Podman
 - A running Mealie instance and an API token for it
-- An [Anthropic API key](https://console.anthropic.com) (billed per use; Claude Pro does **not** include API credits)
+- An API key for Anthropic or Google AI Studio
 
 ---
 
-## Quick start
+## Quick start — Docker
 
 ```bash
 docker run -d \
   --name mealie-scanner \
   -p 8090:8090 \
   -v mealie-scanner-config:/app/config \
-  ghcr.io/YOURUSERNAME/mealie-cookbook-scanner:latest
+  ghcr.io/tysiana/mealie-cookbook-scanner:latest
+```
+
+## Quick start — Podman
+
+```bash
+podman run -d \
+  --name mealie-scanner \
+  -p 8090:8090 \
+  -v mealie-scanner-config:/app/config \
+  --restart unless-stopped \
+  ghcr.io/tysiana/mealie-cookbook-scanner:latest
 ```
 
 Open **http://localhost:8090** and follow the one-time setup wizard.
 
-> **Bazzite / Podman users** — the system Podman binary may be broken. Use the Docker static CLI via the Podman socket:
-> ```bash
-> DOCKER_HOST=unix:///run/user/1000/podman/podman.sock ~/.local/bin/docker run ...
-> ```
-
 ---
 
-## Build locally
+## Build and run locally
 
 ```bash
+git clone https://github.com/Tysiana/mealie-cookbook-scanner.git
+cd mealie-cookbook-scanner
+
+# Docker
 docker build -t mealie-cookbook-scanner:latest .
-docker run -d \
-  --name mealie-scanner \
-  -p 8090:8090 \
+docker run -d --name mealie-scanner -p 8090:8090 \
   -v mealie-scanner-config:/app/config \
   mealie-cookbook-scanner:latest
+
+# Podman
+podman build -t mealie-cookbook-scanner:latest .
+podman run -d --name mealie-scanner -p 8090:8090 \
+  -v mealie-scanner-config:/app/config \
+  --restart unless-stopped \
+  mealie-cookbook-scanner:latest
+```
+
+Or with Compose:
+
+```bash
+docker compose up -d   # or: podman compose up -d
 ```
 
 ---
@@ -61,13 +95,14 @@ docker run -d \
 
 On first launch the app asks for:
 
-| Field | Where to find it |
+| Field | Description |
 |---|---|
 | Mealie URL | Your Mealie base URL, e.g. `http://192.168.1.10:9925` |
 | Mealie token | Mealie → Profile → API Tokens → Create |
-| Anthropic key | console.anthropic.com → API Keys |
+| LLM provider | Anthropic or Google |
+| LLM API key | From console.anthropic.com or aistudio.google.com |
 
-Credentials are stored in the named Docker volume (`mealie-scanner-config`) and never leave the container. The UI never displays them again after saving.
+Credentials are stored in the named volume (`mealie-scanner-config`) and never leave the container. The UI never displays them again after saving.
 
 ---
 
@@ -75,13 +110,13 @@ Credentials are stored in the named Docker volume (`mealie-scanner-config`) and 
 
 ```
 Browser → FastAPI (port 8090)
-             ├─ /api/ocr          — Tesseract (runs inside container)
-             ├─ /api/structure    — Anthropic Claude (text → JSON)
-             ├─ /api/structure-image — Claude vision (image → JSON, skips OCR)
-             └─ /api/import       — Mealie REST API
+             ├─ /api/ocr               — Tesseract (runs inside container)
+             ├─ /api/structure         — LLM text → JSON
+             ├─ /api/structure-image   — LLM vision (image → JSON, skips OCR)
+             └─ /api/import            — Mealie REST API
 ```
 
-The prompt used for extraction lives in `app/prompts/recipe_extraction.md` — edit it to tune Claude's output without touching code.
+The prompt used for extraction lives in `app/prompts/recipe_extraction.md` — edit it to tune output without touching code.
 
 ---
 
@@ -90,17 +125,20 @@ The prompt used for extraction lives in `app/prompts/recipe_extraction.md` — e
 ```
 app/
   config.py          load/save config JSON from mounted volume
-  claude.py          Anthropic API call + prompt loading
+  llm.py             LLMProvider ABC + get_provider() factory
+  providers/
+    anthropic.py     Anthropic Claude implementation
+    gemini.py        Google Gemini implementation
   mealie.py          Mealie REST helpers
   ocr.py             Tesseract wrapper
   image_utils.py     image resize/reformat for vision + hero upload
   routes/
-    config.py        GET+POST /api/config, GET /api/health
+    config.py        GET+POST /api/config, GET /api/health, GET /api/models
     ocr.py           POST /api/ocr
     structure.py     POST /api/structure, /api/structure-image
     import_recipe.py POST /api/import
   prompts/
-    recipe_extraction.md  Claude system prompt
+    recipe_extraction.md  extraction prompt (edit to tune output)
   static/
     index.html       single-page frontend (vanilla JS, no build step)
   imgs/
@@ -111,10 +149,10 @@ app/
 
 ## Tuning extraction quality
 
-Edit `app/prompts/recipe_extraction.md` and rebuild the image. The file is the complete system prompt sent to Claude. Common tweaks:
+Edit `app/prompts/recipe_extraction.md` and rebuild the image. The file is the complete prompt sent to the AI. Common tweaks:
 
 - Add language-specific instructions for cookbooks not in English
-- Tell Claude to preserve section headers as `sectionTitle` fields
+- Tell the model to preserve section headers as `sectionTitle` fields
 - Adjust how it handles missing prep/cook times
 
 ---

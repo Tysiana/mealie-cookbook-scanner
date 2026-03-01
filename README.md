@@ -42,38 +42,27 @@ Choose either provider in the config screen:
 
 ## Quick start
 
-```bash
-git clone https://github.com/Tysiana/mealie-cookbook-scanner.git
-cd mealie-cookbook-scanner
-```
-
 **Docker:**
 ```bash
-docker compose up -d
+docker run -d --name mealie-scanner \
+  -p 8090:8090 \
+  -v mealie-scanner-config:/app/config \
+  --restart unless-stopped \
+  ghcr.io/tysiana/mealie-cookbook-scanner:latest
 ```
 
 **Podman:**
 ```bash
-podman build -t mealie-cookbook-scanner:latest .
 podman run -d --name mealie-scanner \
   --network=host \
   -v mealie-scanner-config:/app/config \
   --restart unless-stopped \
-  mealie-cookbook-scanner:latest
+  ghcr.io/tysiana/mealie-cookbook-scanner:latest
 ```
 
 > **Podman + host networking:** `--network=host` is required when Mealie also runs in a Podman container on the same machine — rootless Podman containers cannot reach each other's published ports via the LAN IP. With host networking, use `http://localhost:<mealie-port>` as the Mealie URL in the config screen. The scanner is still accessible from other machines at `http://<server-ip>:8090`.
 
 Open **http://localhost:8090** and follow the one-time setup wizard.
-
-> **Pre-built image** — once the GitHub Actions workflow has run, you can pull directly instead of building:
-> ```bash
-> podman run -d --name mealie-scanner \
->   --network=host \
->   -v mealie-scanner-config:/app/config \
->   --restart unless-stopped \
->   ghcr.io/tysiana/mealie-cookbook-scanner:latest
-> ```
 
 ---
 

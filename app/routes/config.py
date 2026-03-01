@@ -40,6 +40,26 @@ def get_config():
     }
 
 
+@router.get("/models")
+def list_gemini_models():
+    """Return Gemini models that support generateContent — for debugging key/quota issues."""
+    config = cfg.load_config()
+    if not config or config.llm_provider != "gemini":
+        raise HTTPException(status_code=400, detail="Gemini not configured")
+    try:
+        from google import genai
+        client = genai.Client(api_key=config.llm_key)
+        models = [
+            m.name for m in client.models.list()
+            if hasattr(m, "supported_actions")
+            and m.supported_actions
+            and "generateContent" in m.supported_actions
+        ]
+        return {"models": sorted(models)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/config")
 async def save_config(payload: ConfigPayload):
     mealie_url = payload.mealie_url.rstrip("/")

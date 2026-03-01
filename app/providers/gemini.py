@@ -12,7 +12,7 @@ _VISION_SYSTEM = "You are a recipe extraction assistant. You will be shown an im
 _PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "recipe_extraction.md"
 _USER_PROMPT = _PROMPT_PATH.read_text(encoding="utf-8")
 
-_MODEL = "gemini-2.0-flash"
+_MODEL = "gemini-2.5-flash"
 
 
 class GeminiProvider(LLMProvider):

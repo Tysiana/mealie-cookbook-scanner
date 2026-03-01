@@ -41,7 +41,7 @@
 
       body {
         font-family: "Nunito", "Ubuntu", "Cantarell", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        font-size: 20px;
+        font-size: 23px;
         background: var(--bg);
         color: var(--text);
         min-height: 100vh;
@@ -70,30 +70,33 @@
         text-decoration: none;
       }
       .logo img {
-        height: 44px;
+        height: 56px;
         width: auto;
       }
       .config-hero {
-        text-align: center;
-        padding: 32px 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 36px 0 20px;
       }
       .config-hero img {
-        height: 72px;
-        width: auto;
-        margin-bottom: 12px;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
+        width: 96px;
+        height: 96px;
+        flex-shrink: 0;
+      }
+      .config-hero-text {
+        text-align: left;
       }
       .config-hero h1 {
-        font-size: 1.6rem;
+        font-size: 1.8rem;
         font-weight: 800;
         color: var(--accent);
         margin-bottom: 4px;
       }
       .config-hero p {
         color: var(--muted);
-        font-size: 0.95rem;
+        font-size: 1rem;
+        margin: 0;
       }
       .logo span {
         color: var(--muted);
@@ -165,6 +168,7 @@
       input[type="text"],
       input[type="url"],
       input[type="password"],
+      select,
       textarea {
         width: 100%;
         background: var(--surface2);
@@ -177,7 +181,16 @@
         outline: none;
         transition: border-color 0.2s;
       }
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238c7d6e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+        cursor: pointer;
+      }
       input:focus,
+      select:focus,
       textarea:focus {
         border-color: var(--accent);
       }
@@ -653,13 +666,15 @@
       <div class="view" id="view-config">
         <div class="config-hero">
           <img src="/imgs/mealiescancon.png" alt="Mealie Cookbook Scanner" />
-          <h1>Cookbook Scanner</h1>
-          <p>Scan recipes from your cookbooks straight into Mealie.</p>
+          <div class="config-hero-text">
+            <h1>Cookbook Scanner</h1>
+            <p>Scan recipes from your cookbooks straight into Mealie.</p>
+          </div>
         </div>
         <div class="card">
           <h2>Let's get set up</h2>
           <p class="sub">
-            Enter your Mealie and Anthropic details below. This only needs to be done once — saved
+            Enter your Mealie and LLM provider details below. This only needs to be done once — saved
             to your server volume.
           </p>
 
@@ -686,7 +701,7 @@
             <label for="llmProvider">LLM Provider</label>
             <select id="llmProvider" onchange="updateLlmKeyPlaceholder()">
               <option value="anthropic">Anthropic (Claude Haiku)</option>
-              <option value="gemini">Google (Gemini Flash)</option>
+              <option value="gemini">Google (Gemini 2.5 Flash)</option>
             </select>
           </div>
           <div class="field">
@@ -761,13 +776,13 @@
         <div id="panel-review" class="card" style="display: none">
           <h2>Review extracted text</h2>
           <p class="sub">
-            Fix any OCR mistakes before sending to Claude. Only this text is sent externally — not
+            Fix any OCR mistakes before sending to the AI. Only this text is sent externally — not
             the image.
           </p>
 
           <div class="ocr-warn">
             <span class="ocr-warn-icon">⚠️</span>
-            <span>Make sure the <strong>ingredient list</strong> is complete and in order before sending to Claude — OCR sometimes muddles quantities or skips lines.</span>
+            <span>Make sure the <strong>ingredient list</strong> is complete and in order before sending to the AI — OCR sometimes muddles quantities or skips lines.</span>
           </div>
 
           <div class="field">
@@ -779,7 +794,7 @@
           <div class="btn-row">
             <button class="btn btn-secondary" onclick="goBackToScan()">← Back</button>
             <button class="btn btn-secondary" onclick="addPage()">➕ Add page</button>
-            <button class="btn btn-secondary" id="visionBtn" onclick="runVisionDirect()">⚡ Claude Vision</button>
+            <button class="btn btn-secondary" id="visionBtn" onclick="runVisionDirect()">⚡ AI Vision</button>
             <button class="btn btn-primary" onclick="goToHero()">Looks good →</button>
           </div>
         </div>
@@ -1019,6 +1034,11 @@
           }
         }
         showView("config");
+      }
+
+      function llmProviderLabel() {
+        const provider = state.savedConfig?.llm_provider;
+        return provider === "gemini" ? "Gemini" : "Claude";
       }
 
       function updateLlmKeyPlaceholder() {
@@ -1774,13 +1794,13 @@
       }
 
       // ─────────────────────────────────────────────────────────────
-      // Claude Vision (skip OCR entirely)
+      // AI Vision (skip OCR entirely)
       // ─────────────────────────────────────────────────────────────
       async function runVisionDirect() {
         const btn = document.getElementById("visionBtn");
         const msgEl = document.getElementById("reviewMsg");
         btn.disabled = true;
-        btn.textContent = "Sending to Claude…";
+        btn.textContent = `Sending to ${llmProviderLabel()}…`;
         msgEl.innerHTML = "";
 
         try {
@@ -1793,7 +1813,7 @@
         } catch (e) {
           showMsg(msgEl, "error", e.message);
           btn.disabled = false;
-          btn.textContent = "⚡ Send image to Claude";
+          btn.textContent = `⚡ Send image to ${llmProviderLabel()}`;
         }
       }
 
@@ -1805,14 +1825,14 @@
 
         const heroBlob = state.heroMode !== "skip" ? state.heroBlob : null;
 
-        // Step 1: structure via Claude (skip if vision already did this)
+        // Step 1: structure via LLM (skip if vision already did this)
         let structured;
         if (state.structuredData) {
           structured = state.structuredData;
           addProcessStep(`Parsed via vision: "${structured.name}"`, "done");
           setProgress(40);
         } else {
-          addProcessStep("Sending text to Claude…", "loading");
+          addProcessStep(`Sending text to ${llmProviderLabel()}…`, "loading");
           setProgress(10);
           try {
             const res = await fetch("/api/structure", {
@@ -1911,7 +1931,7 @@
         if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
         document.getElementById("reviewMsg").innerHTML = "";
         const vBtn = document.getElementById("visionBtn");
-        if (vBtn) { vBtn.disabled = false; vBtn.textContent = "⚡ Claude Vision"; }
+        if (vBtn) { vBtn.disabled = false; vBtn.textContent = "⚡ AI Vision"; }
 
         document.getElementById("ocrText").value = "";
         document.getElementById("scanMsg").innerHTML = "";

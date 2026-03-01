@@ -1294,6 +1294,34 @@
         });
         document.querySelectorAll(".hero-panel").forEach((p) => p.classList.remove("active"));
         document.getElementById("hero-" + mode).classList.add("active");
+        if (mode === "upload") initHeroUploadWidget();
+      }
+
+      function initHeroUploadWidget() {
+        const container = document.getElementById("heroUploadZone");
+        container.style.display = "block";
+        if (isMobile()) {
+          container.innerHTML = `
+      <div class="camera-btn">
+        <input type="file" accept="image/*" capture="environment" onchange="handleHeroFile(event)" />
+        <div class="cam-icon">📷</div>
+        <div class="cam-title">Take a photo</div>
+        <div class="cam-sub">Point your camera at the food</div>
+      </div>
+      <div class="file-alt-row">
+        or <label for="heroAltFileInput">choose from files</label>
+        <input type="file" id="heroAltFileInput" accept="image/*" style="display:none;" onchange="handleHeroFile(event)" />
+      </div>`;
+        } else {
+          container.innerHTML = `
+      <div class="upload-zone" id="heroZone">
+        <input type="file" id="heroFileInput" accept="image/*" onchange="handleHeroFile(event)" />
+        <div class="upload-icon">🖼️</div>
+        <p><strong>Choose an image</strong></p>
+        <p>or drag and drop here</p>
+      </div>`;
+          setupDropzone("heroZone");
+        }
       }
 
       function handleHeroFile(e) {
@@ -1481,9 +1509,8 @@
 
       function resetHeroUpload() {
         document.getElementById("heroUploadCropArea").style.display = "none";
-        document.getElementById("heroUploadZone").style.display = "block";
-        document.getElementById("heroFileInput").value = "";
         document.getElementById("heroUploadCropPreview").style.display = "none";
+        initHeroUploadWidget();
         heroUploadStart = null;
         heroUploadEnd = null;
         heroUploadSrcImg = null;
@@ -1902,10 +1929,22 @@
         document.getElementById("progressFill").style.width = pct + "%";
       }
 
+      function buildRecipeLink(slug) {
+        if (!state.mealieUrl) return "#";
+        try {
+          const configured = new URL(state.mealieUrl);
+          if (configured.hostname === "localhost" || configured.hostname === "127.0.0.1") {
+            configured.hostname = window.location.hostname;
+          }
+          return `${configured.origin}/g/home/r/${slug}`;
+        } catch {
+          return `${state.mealieUrl}/g/home/r/${slug}`;
+        }
+      }
+
       function showSuccess(name, slug, warning) {
         document.getElementById("successName").textContent = name;
-        const link = state.mealieUrl ? `${state.mealieUrl}/g/home/r/${slug}` : `#`;
-        document.getElementById("recipeLink").href = link;
+        document.getElementById("recipeLink").href = buildRecipeLink(slug);
         if (warning) {
           const warnEl = document.getElementById("successWarn");
           const div = document.createElement("div");

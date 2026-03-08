@@ -497,9 +497,7 @@
       .zones-btn:hover { background: var(--border); }
       .zones-btn-danger { background: #f5c2c2; color: #7a1f1f; border-color: #e0a0a0; }
       .zones-btn-danger:hover { background: #eeaaaa; }
-      #splitCanvasWrap {
-        cursor: col-resize;
-      }
+
 
       /* ---- OCR ingredient warning ---- */
       .ocr-warn {
@@ -757,21 +755,10 @@
             <div class="rotate-tools">
               <button class="btn btn-secondary" onclick="rotateScan(-90)">↺ Left</button>
               <button class="btn btn-secondary" onclick="rotateScan(90)">↻ Right</button>
-              <button class="btn btn-secondary" id="columnToggleBtn" onclick="toggleColumnSplitter()">📏 Columns</button>
               <button class="btn btn-secondary" id="regionsBtn" onclick="toggleRegionsMode()">🔲 Regions</button>
               <button class="btn btn-primary" style="flex: 1" onclick="runOCR()">
                 Run OCR →
               </button>
-            </div>
-
-            <!-- Column splitter (hidden by default, shown when user clicks Columns) -->
-            <div id="columnSplitter" style="display: none; margin-top: 12px">
-              <p class="split-hint">
-                Drag the line to where the columns split — OCR will scan each side separately for better accuracy.
-              </p>
-              <div class="canvas-wrap" id="splitCanvasWrap">
-                <canvas id="splitCanvas"></canvas>
-              </div>
             </div>
 
             <!-- Regions panel (hidden by default, shown when user clicks Regions) -->
@@ -973,9 +960,6 @@
 
       // Scan rotation state
       let scanRotation = 0; // 0 | 90 | 180 | 270
-
-      // Column splitter state
-      let splitCanvas, splitCtx, splitX = 0.5, splitDragging = false;
 
       // Regions mode state
       let detectedRegions = []; // [{left, top, width, height, enabled}] in image pixels
@@ -1249,11 +1233,6 @@
       }
 
       async function runOCR() {
-        // If column splitter is active, use it for better accuracy
-        if (document.getElementById("columnSplitter").style.display !== "none") {
-          await runColumnOCR();
-          return;
-        }
         // If regions mode is active, use detected regions
         if (regionsMode && detectedRegions.length > 0) {
           await runRegionsOCR();
@@ -1313,15 +1292,11 @@
         scanRotation = 0;
         cropStart = null;
         cropEnd = null;
-        splitX = 0.5;
         detectedRegions = [];
         regionsMode = false;
         resetRegionInteractionState();
         document.getElementById("scanPreview").style.display = "none";
-        document.getElementById("columnSplitter").style.display = "none";
         document.getElementById("regionsPanel").style.display = "none";
-        const colBtn = document.getElementById("columnToggleBtn");
-        if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
         const regBtn = document.getElementById("regionsBtn");
         if (regBtn) { regBtn.textContent = "🔲 Regions"; regBtn.style.color = ""; }
         document.getElementById("scanMsg").innerHTML = "";
@@ -1707,192 +1682,6 @@
       }
 
       // ─────────────────────────────────────────────────────────────
-      // Column splitter
-      // ─────────────────────────────────────────────────────────────
-      function toggleColumnSplitter() {
-        const el = document.getElementById("columnSplitter");
-        const btn = document.getElementById("columnToggleBtn");
-        if (el.style.display === "none") {
-          el.style.display = "block";
-          btn.textContent = "📏 Columns ✓";
-          btn.style.color = "var(--accent)";
-          initSplitCanvas();
-          // Dismiss regions mode if active
-          if (regionsMode) {
-            regionsMode = false;
-            detectedRegions = [];
-            resetRegionInteractionState();
-            document.getElementById("regionsPanel").style.display = "none";
-            const regBtn = document.getElementById("regionsBtn");
-            if (regBtn) { regBtn.textContent = "🔲 Regions"; regBtn.style.color = ""; }
-          }
-        } else {
-          el.style.display = "none";
-          btn.textContent = "📏 Columns";
-          btn.style.color = "";
-        }
-      }
-
-      function initSplitCanvas() {
-        splitCanvas = document.getElementById("splitCanvas");
-        splitCtx = splitCanvas.getContext("2d");
-        if (!cropImg) return;
-
-        const rotated = scanRotation === 90 || scanRotation === 270;
-        const srcW = cropImg.naturalWidth;
-        const srcH = cropImg.naturalHeight;
-        const dispW = rotated ? srcH : srcW;
-        const dispH = rotated ? srcW : srcH;
-        const maxW = splitCanvas.parentElement.clientWidth;
-        const scale = Math.min(1, maxW / dispW);
-        splitCanvas.width = dispW * scale;
-        splitCanvas.height = dispH * scale;
-        drawSplitCanvas();
-
-        splitCanvas.addEventListener("mousedown", startSplitDrag);
-        splitCanvas.addEventListener("mousemove", moveSplitDrag);
-        splitCanvas.addEventListener("mouseup", () => (splitDragging = false));
-        splitCanvas.addEventListener(
-          "touchstart",
-          (e) => {
-            e.preventDefault();
-            startSplitDrag(touchXY(e));
-          },
-          { passive: false },
-        );
-        splitCanvas.addEventListener(
-          "touchmove",
-          (e) => {
-            e.preventDefault();
-            moveSplitDrag(touchXY(e));
-          },
-          { passive: false },
-        );
-        splitCanvas.addEventListener("touchend", () => (splitDragging = false), {
-          passive: false,
-        });
-      }
-
-      function drawSplitCanvas() {
-        if (!cropImg || !splitCanvas) return;
-        const rotated = scanRotation === 90 || scanRotation === 270;
-        const srcW = cropImg.naturalWidth;
-        const srcH = cropImg.naturalHeight;
-        const scale = splitCanvas.width / (rotated ? srcH : srcW);
-        splitCtx.save();
-        splitCtx.translate(splitCanvas.width / 2, splitCanvas.height / 2);
-        splitCtx.rotate((scanRotation * Math.PI) / 180);
-        splitCtx.drawImage(cropImg, (-srcW * scale) / 2, (-srcH * scale) / 2, srcW * scale, srcH * scale);
-        splitCtx.restore();
-        const lineX = splitX * splitCanvas.width;
-        splitCtx.strokeStyle = "#6b9080";
-        splitCtx.lineWidth = 3;
-        splitCtx.setLineDash([10, 5]);
-        splitCtx.beginPath();
-        splitCtx.moveTo(lineX, 0);
-        splitCtx.lineTo(lineX, splitCanvas.height);
-        splitCtx.stroke();
-        splitCtx.setLineDash([]);
-        splitCtx.fillStyle = "#6b9080";
-        splitCtx.beginPath();
-        splitCtx.arc(lineX, splitCanvas.height / 2, 12, 0, Math.PI * 2);
-        splitCtx.fill();
-        splitCtx.fillStyle = "#fff";
-        splitCtx.font = "bold 14px sans-serif";
-        splitCtx.textAlign = "center";
-        splitCtx.textBaseline = "middle";
-        splitCtx.fillText("⟺", lineX, splitCanvas.height / 2);
-      }
-
-      function startSplitDrag(e) {
-        const rect = splitCanvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (splitCanvas.width / rect.width);
-        if (Math.abs(x - splitX * splitCanvas.width) < 24) splitDragging = true;
-      }
-
-      function moveSplitDrag(e) {
-        if (!splitDragging) return;
-        const rect = splitCanvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (splitCanvas.width / rect.width);
-        splitX = Math.max(0.1, Math.min(0.9, x / splitCanvas.width));
-        drawSplitCanvas();
-      }
-
-      async function runColumnOCR() {
-        const msgEl = document.getElementById("scanMsg");
-        showMsg(msgEl, "info", "Running column OCR…", true);
-
-        if (!cropImg) {
-          showMsg(msgEl, "error", "No image loaded.");
-          return;
-        }
-
-        // Apply rotation first (same as regular runOCR)
-        const rotatedBlob = await getRotatedBlob();
-        if (scanRotation !== 0) {
-          const url = URL.createObjectURL(rotatedBlob);
-          await new Promise((resolve) => {
-            cropImg = new Image();
-            cropImg.onload = resolve;
-            cropImg.src = url;
-          });
-          state.uploadedFile = rotatedBlob;
-        }
-
-        const splitPx = Math.round(cropImg.naturalWidth * splitX);
-        const rightWidth = cropImg.naturalWidth - splitPx;
-        const h = cropImg.naturalHeight;
-
-        const leftC = document.createElement("canvas");
-        leftC.width = splitPx;
-        leftC.height = h;
-        leftC.getContext("2d").drawImage(cropImg, 0, 0, splitPx, h, 0, 0, splitPx, h);
-
-        const rightC = document.createElement("canvas");
-        rightC.width = rightWidth;
-        rightC.height = h;
-        rightC.getContext("2d").drawImage(cropImg, splitPx, 0, rightWidth, h, 0, 0, rightWidth, h);
-
-        try {
-          const [leftBlob, rightBlob] = await Promise.all([
-            new Promise((res) => leftC.toBlob(res, "image/jpeg", 0.92)),
-            new Promise((res) => rightC.toBlob(res, "image/jpeg", 0.92)),
-          ]);
-
-          const makeForm = (blob, name) => {
-            const f = new FormData();
-            f.append("file", blob, name);
-            return f;
-          };
-
-          const [leftRes, rightRes] = await Promise.all([
-            fetch("/api/ocr", { method: "POST", body: makeForm(leftBlob, "left.jpg") }),
-            fetch("/api/ocr", { method: "POST", body: makeForm(rightBlob, "right.jpg") }),
-          ]);
-
-          if (!leftRes.ok) throw new Error((await leftRes.json()).detail);
-          if (!rightRes.ok) throw new Error((await rightRes.json()).detail);
-
-          const leftText = (await leftRes.json()).text;
-          const rightText = (await rightRes.json()).text;
-          const pageText = leftText + "\n\n" + rightText;
-
-          if (state.appendingPage) {
-            state.ocrText = state.ocrText + "\n\n--- page break ---\n\n" + pageText;
-            state.appendingPage = false;
-          } else {
-            state.ocrText = pageText;
-          }
-          document.getElementById("ocrText").value = state.ocrText;
-          msgEl.innerHTML = "";
-          setStep(2);
-          showPanel("review");
-        } catch (e) {
-          showMsg(msgEl, "error", `Column OCR failed: ${e.message}`);
-        }
-      }
-
-      // ─────────────────────────────────────────────────────────────
       // Regions mode
       // ─────────────────────────────────────────────────────────────
       async function toggleRegionsMode() {
@@ -1929,10 +1718,6 @@
           regionsMode = true;
           btn.textContent = "🔲 Regions ✓";
           btn.style.color = "var(--accent)";
-          // Hide column splitter if active
-          document.getElementById("columnSplitter").style.display = "none";
-          const colBtn = document.getElementById("columnToggleBtn");
-          if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
           panel.style.display = "block";
           initRegionsCanvas();
         }
@@ -2333,6 +2118,10 @@
           return;
         }
 
+        const ocrBtn = document.querySelector("#regionsPanel .btn-primary");
+        const origLabel = ocrBtn.textContent;
+        ocrBtn.disabled = true;
+        ocrBtn.textContent = "Running OCR…";
         showMsg(msgEl, "info", `Running OCR on ${enabledRegions.length} zone(s)…`, true);
 
         const blobs = await Promise.all(
@@ -2399,6 +2188,8 @@
           showPanel("review");
         } catch (e) {
           showMsg(msgEl, "error", `Zones OCR failed: ${e.message}`);
+          ocrBtn.disabled = false;
+          ocrBtn.textContent = origLabel;
         }
       }
 
@@ -2545,15 +2336,11 @@
         scanRotation = 0;
         cropStart = null;
         cropEnd = null;
-        splitX = 0.5;
         detectedRegions = [];
         regionsMode = false;
         resetRegionInteractionState();
         document.getElementById("scanPreview").style.display = "none";
-        document.getElementById("columnSplitter").style.display = "none";
         document.getElementById("regionsPanel").style.display = "none";
-        const colBtn = document.getElementById("columnToggleBtn");
-        if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
         const regBtn = document.getElementById("regionsBtn");
         if (regBtn) { regBtn.textContent = "🔲 Regions"; regBtn.style.color = ""; }
         document.getElementById("reviewMsg").innerHTML = "";

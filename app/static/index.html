@@ -1795,8 +1795,10 @@
           const right = rx + rw, bottom = ry + rh;
           const midX = rx + rw / 2, midY = ry + rh / 2;
 
-          // Delete button (top-right)
-          if (Math.hypot(cx - right, cy - ry) < HIT_DELETE_RADIUS) return { idx: i, type: "delete" };
+          // Delete button — hit-test must match drawn position (right-14, ry+14),
+          // not the corner itself which is shared with the "tr" resize handle.
+          const delX = right - 14, delY = ry + 14;
+          if (Math.hypot(cx - delX, cy - delY) < HIT_DELETE_RADIUS) return { idx: i, type: "delete" };
 
           // 8 resize handles
           const handles = [
@@ -2163,7 +2165,7 @@
         try {
           const responses = await Promise.all(
             validBlobs.map((blob, i) =>
-              fetch("/api/ocr", { method: "POST", body: makeForm(blob, `region_${i}.jpg`) }),
+              fetch("/api/ocr?psm=6", { method: "POST", body: makeForm(blob, `region_${i}.jpg`) }),
             ),
           );
 

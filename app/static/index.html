@@ -492,6 +492,11 @@
         color: var(--muted);
         margin-bottom: 8px;
       }
+      .zones-toolbar { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+      .zones-btn { min-height: 44px; padding: 8px 14px; border-radius: 6px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: inherit; }
+      .zones-btn:hover { background: var(--border); }
+      .zones-btn-danger { background: #f5c2c2; color: #7a1f1f; border-color: #e0a0a0; }
+      .zones-btn-danger:hover { background: #eeaaaa; }
       #splitCanvasWrap {
         cursor: col-resize;
       }
@@ -753,6 +758,7 @@
               <button class="btn btn-secondary" onclick="rotateScan(-90)">↺ Left</button>
               <button class="btn btn-secondary" onclick="rotateScan(90)">↻ Right</button>
               <button class="btn btn-secondary" id="columnToggleBtn" onclick="toggleColumnSplitter()">📏 Columns</button>
+              <button class="btn btn-secondary" id="regionsBtn" onclick="toggleRegionsMode()">🔲 Regions</button>
               <button class="btn btn-primary" style="flex: 1" onclick="runOCR()">
                 Run OCR →
               </button>
@@ -765,6 +771,21 @@
               </p>
               <div class="canvas-wrap" id="splitCanvasWrap">
                 <canvas id="splitCanvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Regions panel (hidden by default, shown when user clicks Regions) -->
+            <div id="regionsPanel" style="display: none; margin-top: 12px">
+              <div class="zones-toolbar">
+                <button class="zones-btn" onclick="addDefaultZone()">＋ Add Zone</button>
+                <button class="zones-btn zones-btn-danger" onclick="clearAllZones()">Clear All</button>
+              </div>
+              <p class="split-hint" id="regionsHint">Draw on the image to add a zone, or tap ＋ Add Zone.</p>
+              <div class="canvas-wrap">
+                <canvas id="regionsCanvas"></canvas>
+              </div>
+              <div style="margin-top: 8px">
+                <button class="btn btn-primary btn-full" onclick="runRegionsOCR()">Run OCR on Regions →</button>
               </div>
             </div>
           </div>
@@ -955,6 +976,29 @@
 
       // Column splitter state
       let splitCanvas, splitCtx, splitX = 0.5, splitDragging = false;
+
+      // Regions mode state
+      let detectedRegions = []; // [{left, top, width, height, enabled}] in image pixels
+      let regionsMode = false;
+      let regionsCanvas, regionsCtx;
+      let regionsImageWidth = 0, regionsImageHeight = 0;
+      let regionsScale = 1; // canvas pixels per image pixel
+      const REGION_COLORS = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#00897b"];
+      // Active draw-new-zone interaction
+      let drawingNewRegion = false;
+      let drawStartImgX = 0, drawStartImgY = 0, drawCurrImgX = 0, drawCurrImgY = 0;
+      // Active move interaction
+      let movingRegionIdx = null;
+      let moveStartCanvasX = 0, moveStartCanvasY = 0, moveRegionStartGeom = null;
+      // Active resize interaction
+      let resizingRegionIdx = null;
+      let resizeHandle = null; // "tl"|"t"|"tr"|"r"|"br"|"b"|"bl"|"l"
+      let resizeStartCanvasX = 0, resizeStartCanvasY = 0, resizeRegionStartGeom = null;
+      // Shared interaction helpers
+      let interactionMoved = false;
+      const INTERACTION_MOVE_THRESHOLD_MOUSE = 5;
+      const INTERACTION_MOVE_THRESHOLD_TOUCH = 10;
+      let isTouchInteraction = false;
 
       // Scan canvas crop state
       let cropCanvas, cropCtx, cropImg;
@@ -1210,6 +1254,11 @@
           await runColumnOCR();
           return;
         }
+        // If regions mode is active, use detected regions
+        if (regionsMode && detectedRegions.length > 0) {
+          await runRegionsOCR();
+          return;
+        }
 
         const msgEl = document.getElementById("scanMsg");
         showMsg(msgEl, "info", "Running OCR…", true);
@@ -1265,10 +1314,16 @@
         cropStart = null;
         cropEnd = null;
         splitX = 0.5;
+        detectedRegions = [];
+        regionsMode = false;
+        resetRegionInteractionState();
         document.getElementById("scanPreview").style.display = "none";
         document.getElementById("columnSplitter").style.display = "none";
+        document.getElementById("regionsPanel").style.display = "none";
         const colBtn = document.getElementById("columnToggleBtn");
         if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
+        const regBtn = document.getElementById("regionsBtn");
+        if (regBtn) { regBtn.textContent = "🔲 Regions"; regBtn.style.color = ""; }
         document.getElementById("scanMsg").innerHTML = "";
         showPanel("scan");
       }
@@ -1282,6 +1337,9 @@
         state.ocrText = text;
         setStep(3);
         showPanel("hero");
+        // Draw crop canvas now that the panel (and its parent) is visible — clientWidth is 0
+        // when the panel is hidden, which would produce a 0×0 canvas drawn too early.
+        if (cropImg) drawCropCanvas();
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -1294,6 +1352,7 @@
         });
         document.querySelectorAll(".hero-panel").forEach((p) => p.classList.remove("active"));
         document.getElementById("hero-" + mode).classList.add("active");
+        if (mode === "crop" && cropImg) drawCropCanvas();
         if (mode === "upload") initHeroUploadWidget();
       }
 
@@ -1342,18 +1401,13 @@
         heroUploadCanvas = document.getElementById("heroUploadCropCanvas");
         heroUploadCtx = heroUploadCanvas.getContext("2d");
 
-        heroUploadCanvas.addEventListener("mousedown", (e) =>
-          startHeroUploadCrop(heroCanvasPos(e)),
-        );
-        heroUploadCanvas.addEventListener("mousemove", (e) => {
-          if (heroUploadDragging) {
-            heroUploadEnd = heroCanvasPos(e);
-            redrawHeroUpload();
-          }
+        heroUploadCanvas.addEventListener("mousedown", (e) => {
+          startHeroUploadCrop(heroCanvasPos(e));
+          const onMove = (ev) => { heroUploadEnd = heroCanvasPos(ev); redrawHeroUpload(); };
+          const onUp   = (ev) => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); endHeroUploadCrop(heroCanvasPos(ev)); };
+          window.addEventListener("mousemove", onMove);
+          window.addEventListener("mouseup", onUp);
         });
-        heroUploadCanvas.addEventListener("mouseup", (e) =>
-          endHeroUploadCrop(heroCanvasPos(e)),
-        );
         heroUploadCanvas.addEventListener(
           "touchstart",
           (e) => {
@@ -1386,8 +1440,8 @@
       function heroCanvasPos(e) {
         const rect = heroUploadCanvas.getBoundingClientRect();
         return {
-          x: (e.clientX - rect.left) * (heroUploadCanvas.width / rect.width),
-          y: (e.clientY - rect.top) * (heroUploadCanvas.height / rect.height),
+          x: Math.max(0, Math.min((e.clientX - rect.left) * (heroUploadCanvas.width / rect.width),  heroUploadCanvas.width)),
+          y: Math.max(0, Math.min((e.clientY - rect.top)  * (heroUploadCanvas.height / rect.height), heroUploadCanvas.height)),
         };
       }
 
@@ -1471,7 +1525,7 @@
         redrawHeroUpload();
         const { w, h } = heroUploadSelectionRect();
         const btn = document.getElementById("heroUploadCropBtn");
-        btn.textContent = w > 10 && h > 10 ? "Crop selection →" : "Use full image →";
+        btn.textContent = w > 5 && h > 5 ? "Crop selection →" : "Use full image →";
       }
 
       function clearHeroUploadCrop() {
@@ -1525,14 +1579,13 @@
         cropCanvas = document.getElementById("cropCanvas");
         cropCtx = cropCanvas.getContext("2d");
 
-        cropCanvas.addEventListener("mousedown", (e) => startCrop(canvasPos(e)));
-        cropCanvas.addEventListener("mousemove", (e) => {
-          if (dragging) {
-            cropEnd = canvasPos(e);
-            redraw();
-          }
+        cropCanvas.addEventListener("mousedown", (e) => {
+          startCrop(canvasPos(e));
+          const onMove = (ev) => { cropEnd = canvasPos(ev); redraw(); };
+          const onUp   = (ev) => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); endCrop(canvasPos(ev)); };
+          window.addEventListener("mousemove", onMove);
+          window.addEventListener("mouseup", onUp);
         });
-        cropCanvas.addEventListener("mouseup", (e) => endCrop(canvasPos(e)));
 
         cropCanvas.addEventListener(
           "touchstart",
@@ -1572,7 +1625,10 @@
         const rect = cropCanvas.getBoundingClientRect();
         const scaleX = cropCanvas.width / rect.width;
         const scaleY = cropCanvas.height / rect.height;
-        return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+        return {
+          x: Math.max(0, Math.min((e.clientX - rect.left) * scaleX, cropCanvas.width)),
+          y: Math.max(0, Math.min((e.clientY - rect.top)  * scaleY, cropCanvas.height)),
+        };
       }
 
       function drawCropCanvas() {
@@ -1620,7 +1676,7 @@
         cropEnd = pos;
         redraw();
         const { w, h } = selectionRect();
-        if (w > 10 && h > 10) document.getElementById("cropBtn").disabled = false;
+        if (w > 5 && h > 5) document.getElementById("cropBtn").disabled = false;
       }
 
       function clearCrop() {
@@ -1661,6 +1717,15 @@
           btn.textContent = "📏 Columns ✓";
           btn.style.color = "var(--accent)";
           initSplitCanvas();
+          // Dismiss regions mode if active
+          if (regionsMode) {
+            regionsMode = false;
+            detectedRegions = [];
+            resetRegionInteractionState();
+            document.getElementById("regionsPanel").style.display = "none";
+            const regBtn = document.getElementById("regionsBtn");
+            if (regBtn) { regBtn.textContent = "🔲 Regions"; regBtn.style.color = ""; }
+          }
         } else {
           el.style.display = "none";
           btn.textContent = "📏 Columns";
@@ -1828,6 +1893,516 @@
       }
 
       // ─────────────────────────────────────────────────────────────
+      // Regions mode
+      // ─────────────────────────────────────────────────────────────
+      async function toggleRegionsMode() {
+        const panel = document.getElementById("regionsPanel");
+        const btn = document.getElementById("regionsBtn");
+        if (regionsMode) {
+          regionsMode = false;
+          detectedRegions = [];
+          resetRegionInteractionState();
+          panel.style.display = "none";
+          btn.textContent = "🔲 Regions";
+          btn.style.color = "";
+        } else {
+          if (!cropImg) {
+            showMsg(document.getElementById("scanMsg"), "error", "No image loaded.");
+            return;
+          }
+          // Bake rotation into cropImg so the regions canvas matches what the user sees in the
+          // preview, and so runRegionsOCR crops from the correctly-oriented image.
+          if (scanRotation !== 0) {
+            const rotatedBlob = await getRotatedBlob();
+            const url = URL.createObjectURL(rotatedBlob);
+            await new Promise((resolve) => {
+              cropImg = new Image();
+              cropImg.onload = resolve;
+              cropImg.src = url;
+            });
+            state.uploadedFile = rotatedBlob;
+            drawCropCanvas();
+            drawPreviewCanvas();
+          }
+          regionsImageWidth = cropImg.naturalWidth;
+          regionsImageHeight = cropImg.naturalHeight;
+          regionsMode = true;
+          btn.textContent = "🔲 Regions ✓";
+          btn.style.color = "var(--accent)";
+          // Hide column splitter if active
+          document.getElementById("columnSplitter").style.display = "none";
+          const colBtn = document.getElementById("columnToggleBtn");
+          if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
+          panel.style.display = "block";
+          initRegionsCanvas();
+        }
+      }
+
+      function regionsCanvasPos(clientX, clientY) {
+        const rect = regionsCanvas.getBoundingClientRect();
+        return {
+          x: (clientX - rect.left) * (regionsCanvas.width / rect.width),
+          y: (clientY - rect.top) * (regionsCanvas.height / rect.height),
+        };
+      }
+
+      function initRegionsCanvas() {
+        regionsCanvas = document.getElementById("regionsCanvas");
+        regionsCtx = regionsCanvas.getContext("2d");
+        if (!cropImg || regionsImageWidth <= 0) return;
+
+        const maxW = regionsCanvas.parentElement.clientWidth;
+        regionsScale = Math.min(1, maxW / regionsImageWidth);
+        regionsCanvas.width = regionsImageWidth * regionsScale;
+        regionsCanvas.height = regionsImageHeight * regionsScale;
+        drawRegionsCanvas();
+
+        // Remove old listeners by replacing canvas with a clone
+        const fresh = regionsCanvas.cloneNode(false);
+        regionsCanvas.parentNode.replaceChild(fresh, regionsCanvas);
+        regionsCanvas = fresh;
+        regionsCtx = regionsCanvas.getContext("2d");
+        drawRegionsCanvas();
+
+        regionsCanvas.addEventListener("mousedown", (e) => { isTouchInteraction = false; onRegionsMouseDown(regionsCanvasPos(e.clientX, e.clientY)); });
+        regionsCanvas.addEventListener("mousemove", (e) => onRegionsMouseMove(regionsCanvasPos(e.clientX, e.clientY)));
+        regionsCanvas.addEventListener("mouseup",   (e) => onRegionsMouseUp(regionsCanvasPos(e.clientX, e.clientY)));
+        regionsCanvas.addEventListener("mouseleave", () => {
+          if (drawingNewRegion || movingRegionIdx !== null || resizingRegionIdx !== null) {
+            resetRegionInteractionState();
+            drawRegionsCanvas();
+          }
+          regionsCanvas.style.cursor = "crosshair";
+        });
+        regionsCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); isTouchInteraction = true; const t = touchXY(e); onRegionsMouseDown(regionsCanvasPos(t.clientX, t.clientY)); }, { passive: false });
+        regionsCanvas.addEventListener("touchmove",  (e) => { e.preventDefault(); const t = touchXY(e); onRegionsMouseMove(regionsCanvasPos(t.clientX, t.clientY)); }, { passive: false });
+        regionsCanvas.addEventListener("touchend",   (e) => { e.preventDefault(); const t = touchXY(e); onRegionsMouseUp(regionsCanvasPos(t.clientX, t.clientY)); }, { passive: false });
+
+        window.addEventListener("orientationchange", () => { if (regionsMode) initRegionsCanvas(); });
+      }
+
+      const HIT_HANDLE_RADIUS = 22;
+      const HIT_DELETE_RADIUS = 18;
+      const MIN_ZONE_SIZE = 60; // minimum width/height in image pixels for a valid zone
+
+      let redrawPending = false;
+
+      function scheduleRedraw() {
+        if (redrawPending) return;
+        redrawPending = true;
+        requestAnimationFrame(() => { redrawPending = false; drawRegionsCanvas(); });
+      }
+
+      function resetRegionInteractionState() {
+        drawingNewRegion = false;
+        movingRegionIdx = null; moveRegionStartGeom = null;
+        resizingRegionIdx = null; resizeHandle = null; resizeRegionStartGeom = null;
+        interactionMoved = false;
+        redrawPending = false;
+      }
+
+      function getRegionHitInfo(cx, cy) {
+        const sc = regionsScale;
+        for (let i = detectedRegions.length - 1; i >= 0; i--) {
+          const r = detectedRegions[i];
+          const rx = r.left * sc, ry = r.top * sc;
+          const rw = r.width * sc, rh = r.height * sc;
+          const right = rx + rw, bottom = ry + rh;
+          const midX = rx + rw / 2, midY = ry + rh / 2;
+
+          // Delete button (top-right)
+          if (Math.hypot(cx - right, cy - ry) < HIT_DELETE_RADIUS) return { idx: i, type: "delete" };
+
+          // 8 resize handles
+          const handles = [
+            ["tl", rx, ry], ["t", midX, ry], ["tr", right, ry],
+            ["l", rx, midY],                  ["r", right, midY],
+            ["bl", rx, bottom], ["b", midX, bottom], ["br", right, bottom],
+          ];
+          for (const [handle, hx, hy] of handles) {
+            if (Math.hypot(cx - hx, cy - hy) < HIT_HANDLE_RADIUS) return { idx: i, type: "resize", handle };
+          }
+
+          // Interior (move)
+          if (cx >= rx && cx <= right && cy >= ry && cy <= bottom) return { idx: i, type: "move" };
+        }
+        return null;
+      }
+
+      function onRegionsMouseDown(pos) {
+        if (resizingRegionIdx !== null || movingRegionIdx !== null || drawingNewRegion) return;
+        interactionMoved = false;
+        const hit = getRegionHitInfo(pos.x, pos.y);
+        if (!hit) {
+          drawingNewRegion = true;
+          drawStartImgX = Math.max(0, Math.min(pos.x / regionsScale, regionsImageWidth));
+          drawStartImgY = Math.max(0, Math.min(pos.y / regionsScale, regionsImageHeight));
+          drawCurrImgX = drawStartImgX;
+          drawCurrImgY = drawStartImgY;
+        } else if (hit.type === "resize") {
+          resizingRegionIdx = hit.idx;
+          resizeHandle = hit.handle;
+          resizeStartCanvasX = pos.x;
+          resizeStartCanvasY = pos.y;
+          resizeRegionStartGeom = { ...detectedRegions[hit.idx] };
+        } else if (hit.type === "move") {
+          movingRegionIdx = hit.idx;
+          moveStartCanvasX = pos.x;
+          moveStartCanvasY = pos.y;
+          moveRegionStartGeom = { ...detectedRegions[hit.idx] };
+        }
+        // "delete" type: handled on mouseup if !interactionMoved
+      }
+
+      function onRegionsMouseMove(pos) {
+        const threshold = isTouchInteraction ? INTERACTION_MOVE_THRESHOLD_TOUCH : INTERACTION_MOVE_THRESHOLD_MOUSE;
+
+        if (drawingNewRegion) {
+          const dx = pos.x - drawStartImgX * regionsScale;
+          const dy = pos.y - drawStartImgY * regionsScale;
+          if (!interactionMoved && Math.hypot(dx, dy) > threshold) interactionMoved = true;
+          if (interactionMoved) {
+            drawCurrImgX = Math.max(0, Math.min(pos.x / regionsScale, regionsImageWidth));
+            drawCurrImgY = Math.max(0, Math.min(pos.y / regionsScale, regionsImageHeight));
+            scheduleRedraw();
+          }
+          return;
+        }
+
+        if (movingRegionIdx !== null) {
+          const dx = pos.x - moveStartCanvasX;
+          const dy = pos.y - moveStartCanvasY;
+          if (!interactionMoved && Math.hypot(dx, dy) > threshold) interactionMoved = true;
+          if (interactionMoved) {
+            const r = detectedRegions[movingRegionIdx];
+            const g = moveRegionStartGeom;
+            r.left = Math.max(0, Math.min(g.left + dx / regionsScale, regionsImageWidth - r.width));
+            r.top  = Math.max(0, Math.min(g.top  + dy / regionsScale, regionsImageHeight - r.height));
+            scheduleRedraw();
+          }
+          return;
+        }
+
+        if (resizingRegionIdx !== null) {
+          const dx = pos.x - resizeStartCanvasX;
+          const dy = pos.y - resizeStartCanvasY;
+          if (!interactionMoved && Math.hypot(dx, dy) > threshold) interactionMoved = true;
+          if (interactionMoved) {
+            const r = detectedRegions[resizingRegionIdx];
+            const g = resizeRegionStartGeom;
+            const sc = regionsScale;
+            const dxi = dx / sc, dyi = dy / sc;
+            // Apply per-handle math
+            if (resizeHandle === "tl" || resizeHandle === "l" || resizeHandle === "bl") {
+              const newLeft = Math.max(0, g.left + dxi);
+              const newWidth = Math.max(MIN_ZONE_SIZE, g.width - dxi);
+              r.left = newLeft; r.width = newWidth;
+            }
+            if (resizeHandle === "tr" || resizeHandle === "r" || resizeHandle === "br") {
+              r.width = Math.max(MIN_ZONE_SIZE, Math.min(g.width + dxi, regionsImageWidth - r.left));
+            }
+            if (resizeHandle === "tl" || resizeHandle === "t" || resizeHandle === "tr") {
+              const newTop = Math.max(0, g.top + dyi);
+              const newHeight = Math.max(MIN_ZONE_SIZE, g.height - dyi);
+              r.top = newTop; r.height = newHeight;
+            }
+            if (resizeHandle === "bl" || resizeHandle === "b" || resizeHandle === "br") {
+              r.height = Math.max(MIN_ZONE_SIZE, Math.min(g.height + dyi, regionsImageHeight - r.top));
+            }
+            scheduleRedraw();
+          }
+          return;
+        }
+
+        // No active interaction — update cursor
+        updateCursor(pos);
+      }
+
+      function onRegionsMouseUp(pos) {
+        if (!interactionMoved) {
+          // Treat as click
+          const hit = getRegionHitInfo(pos.x, pos.y);
+          if (hit?.type === "delete") {
+            detectedRegions.splice(hit.idx, 1);
+            drawRegionsCanvas();
+            updateRegionsHint();
+          } else if (hit?.type === "move" && !drawingNewRegion) {
+            detectedRegions[hit.idx].enabled = !detectedRegions[hit.idx].enabled;
+            drawRegionsCanvas();
+          }
+        } else if (drawingNewRegion) {
+          // Finalise drawn zone
+          const x1 = Math.min(drawStartImgX, drawCurrImgX);
+          const y1 = Math.min(drawStartImgY, drawCurrImgY);
+          const x2 = Math.max(drawStartImgX, drawCurrImgX);
+          const y2 = Math.max(drawStartImgY, drawCurrImgY);
+          const width  = Math.min(x2 - x1, regionsImageWidth  - x1);
+          const height = Math.min(y2 - y1, regionsImageHeight - y1);
+          if (width >= MIN_ZONE_SIZE && height >= MIN_ZONE_SIZE) {
+            detectedRegions.push({ left: x1, top: y1, width, height, enabled: true });
+            updateRegionsHint();
+          }
+        }
+
+        // Reset all interaction state
+        resetRegionInteractionState();
+
+        drawRegionsCanvas();
+        updateCursor(pos);
+      }
+
+      function drawRegionsCanvas() {
+        if (!cropImg || !regionsCanvas) return;
+        const sc = regionsScale;
+
+        regionsCtx.clearRect(0, 0, regionsCanvas.width, regionsCanvas.height);
+        regionsCtx.drawImage(cropImg, 0, 0, regionsCanvas.width, regionsCanvas.height);
+
+        // Rubber-band for new zone being drawn
+        if (drawingNewRegion && interactionMoved) {
+          const x1 = Math.min(drawStartImgX, drawCurrImgX) * sc;
+          const y1 = Math.min(drawStartImgY, drawCurrImgY) * sc;
+          const w  = Math.abs(drawCurrImgX - drawStartImgX) * sc;
+          const h  = Math.abs(drawCurrImgY - drawStartImgY) * sc;
+          regionsCtx.save();
+          regionsCtx.globalAlpha = 0.15;
+          regionsCtx.fillStyle = "#555";
+          regionsCtx.fillRect(x1, y1, w, h);
+          regionsCtx.globalAlpha = 0.7;
+          regionsCtx.strokeStyle = "#555";
+          regionsCtx.lineWidth = 2;
+          regionsCtx.setLineDash([6, 3]);
+          regionsCtx.strokeRect(x1, y1, w, h);
+          regionsCtx.setLineDash([]);
+          regionsCtx.restore();
+        }
+
+        detectedRegions.forEach((region, index) => {
+          const rx = region.left * sc;
+          const ry = region.top * sc;
+          const rw = region.width * sc;
+          const rh = region.height * sc;
+          const color = REGION_COLORS[index % REGION_COLORS.length];
+          const alpha = region.enabled ? 1.0 : 0.45;
+
+          // Fill
+          regionsCtx.globalAlpha = region.enabled ? 0.22 : 0;
+          regionsCtx.fillStyle = color;
+          regionsCtx.fillRect(rx, ry, rw, rh);
+
+          // Border
+          regionsCtx.globalAlpha = alpha;
+          regionsCtx.strokeStyle = color;
+          regionsCtx.lineWidth = 2;
+          if (!region.enabled) regionsCtx.setLineDash([6, 4]);
+          regionsCtx.strokeRect(rx, ry, rw, rh);
+          regionsCtx.setLineDash([]);
+
+          if (region.enabled) {
+            // 8 circular handles
+            const midX = rx + rw / 2, midY = ry + rh / 2;
+            const right = rx + rw, bottom = ry + rh;
+            const handlePositions = [
+              [rx, ry], [midX, ry], [right, ry],
+              [rx, midY],           [right, midY],
+              [rx, bottom], [midX, bottom], [right, bottom],
+            ];
+            handlePositions.forEach(([hx, hy]) => {
+              regionsCtx.beginPath();
+              regionsCtx.arc(hx, hy, 10, 0, Math.PI * 2);
+              regionsCtx.fillStyle = "#fff";
+              regionsCtx.fill();
+              regionsCtx.strokeStyle = color;
+              regionsCtx.lineWidth = 2;
+              regionsCtx.stroke();
+            });
+
+            // Numbered badge (top-left)
+            regionsCtx.globalAlpha = 1.0;
+            regionsCtx.fillStyle = color;
+            regionsCtx.beginPath();
+            regionsCtx.arc(rx + 14, ry + 14, 13, 0, Math.PI * 2);
+            regionsCtx.fill();
+            regionsCtx.fillStyle = "#fff";
+            regionsCtx.font = "bold 14px sans-serif";
+            regionsCtx.textAlign = "center";
+            regionsCtx.textBaseline = "middle";
+            regionsCtx.fillText(String(index + 1), rx + 14, ry + 14);
+          } else {
+            // Still draw number badge at reduced alpha
+            regionsCtx.globalAlpha = alpha;
+            regionsCtx.fillStyle = color;
+            regionsCtx.beginPath();
+            regionsCtx.arc(rx + 14, ry + 14, 13, 0, Math.PI * 2);
+            regionsCtx.fill();
+            regionsCtx.fillStyle = "#fff";
+            regionsCtx.font = "bold 14px sans-serif";
+            regionsCtx.textAlign = "center";
+            regionsCtx.textBaseline = "middle";
+            regionsCtx.fillText(String(index + 1), rx + 14, ry + 14);
+          }
+
+          // Delete × (top-right)
+          regionsCtx.globalAlpha = alpha;
+          regionsCtx.fillStyle = "#fff";
+          regionsCtx.beginPath();
+          regionsCtx.arc(rx + rw - 14, ry + 14, 14, 0, Math.PI * 2);
+          regionsCtx.fill();
+          regionsCtx.strokeStyle = color;
+          regionsCtx.lineWidth = 2;
+          regionsCtx.stroke();
+          regionsCtx.fillStyle = color;
+          regionsCtx.font = "bold 16px sans-serif";
+          regionsCtx.textAlign = "center";
+          regionsCtx.textBaseline = "middle";
+          regionsCtx.fillText("×", rx + rw - 14, ry + 14);
+
+          regionsCtx.globalAlpha = 1.0;
+        });
+
+        // Empty-canvas hint overlay
+        if (!detectedRegions.length && !drawingNewRegion) {
+          regionsCtx.save();
+          regionsCtx.globalAlpha = 0.55;
+          regionsCtx.fillStyle = "#fff";
+          regionsCtx.font = "bold 16px sans-serif";
+          regionsCtx.textAlign = "center";
+          regionsCtx.textBaseline = "middle";
+          regionsCtx.fillText("Draw to add a zone, or tap ＋ Add Zone", regionsCanvas.width / 2, regionsCanvas.height / 2);
+          regionsCtx.restore();
+        }
+      }
+
+      const CURSOR_MAP = {
+        tl: "nwse-resize", br: "nwse-resize",
+        tr: "nesw-resize", bl: "nesw-resize",
+        t: "ns-resize",    b: "ns-resize",
+        l: "ew-resize",    r: "ew-resize",
+        delete: "pointer",
+        move: "grab",
+      };
+
+      function updateCursor(pos) {
+        if (!regionsCanvas) return;
+        if (!detectedRegions.length) { regionsCanvas.style.cursor = "crosshair"; return; }
+        const hit = getRegionHitInfo(pos.x, pos.y);
+        regionsCanvas.style.cursor = hit ? (CURSOR_MAP[hit.type === "resize" ? hit.handle : hit.type] || "crosshair") : "crosshair";
+      }
+
+      function updateRegionsHint() {
+        const el = document.getElementById("regionsHint");
+        if (!el) return;
+        if (!detectedRegions.length) {
+          el.textContent = "Draw on the image to add a zone, or tap ＋ Add Zone.";
+        } else {
+          el.textContent = `${detectedRegions.length} zone(s). Click interior to toggle, drag to move, drag handle to resize, × to delete.`;
+        }
+      }
+
+      function addDefaultZone() {
+        if (!regionsMode || !cropImg) return;
+        detectedRegions.push({
+          left:   Math.round(regionsImageWidth  * 0.1),
+          top:    Math.round(regionsImageHeight * 0.1),
+          width:  Math.round(regionsImageWidth  * 0.8),
+          height: Math.round(regionsImageHeight * 0.8),
+          enabled: true,
+        });
+        drawRegionsCanvas();
+        updateRegionsHint();
+      }
+
+      function clearAllZones() {
+        if (!detectedRegions.length) return;
+        if (!confirm("Delete all zones?")) return;
+        detectedRegions = [];
+        drawRegionsCanvas();
+        updateRegionsHint();
+      }
+
+      async function runRegionsOCR() {
+        const enabledRegions = detectedRegions.filter((r) => r.enabled);
+        const msgEl = document.getElementById("scanMsg");
+
+        if (!enabledRegions.length) {
+          showMsg(msgEl, "error", "No zones enabled — click a zone interior to enable it.");
+          return;
+        }
+        if (!cropImg) {
+          showMsg(msgEl, "error", "No image loaded.");
+          return;
+        }
+
+        showMsg(msgEl, "info", `Running OCR on ${enabledRegions.length} zone(s)…`, true);
+
+        const blobs = await Promise.all(
+          enabledRegions.map((r) => {
+            // Clamp to image bounds before drawing to avoid degenerate canvases
+            const safeRegion = {
+              left:   Math.max(0, Math.min(Math.round(r.left),   regionsImageWidth  - 1)),
+              top:    Math.max(0, Math.min(Math.round(r.top),    regionsImageHeight - 1)),
+              width:  Math.round(r.width),
+              height: Math.round(r.height),
+            };
+            safeRegion.width  = Math.min(safeRegion.width,  regionsImageWidth  - safeRegion.left);
+            safeRegion.height = Math.min(safeRegion.height, regionsImageHeight - safeRegion.top);
+            if (safeRegion.width < 5 || safeRegion.height < 5) return Promise.resolve(null);
+            const c = document.createElement("canvas");
+            c.width  = safeRegion.width;
+            c.height = safeRegion.height;
+            c.getContext("2d").drawImage(
+              cropImg,
+              safeRegion.left, safeRegion.top, safeRegion.width, safeRegion.height,
+              0, 0, safeRegion.width, safeRegion.height,
+            );
+            return new Promise((res) => c.toBlob(res, "image/jpeg", 0.92));
+          }),
+        );
+
+        const validBlobs = blobs.filter(Boolean);
+        if (!validBlobs.length) {
+          showMsg(msgEl, "error", "All zones are too small to OCR.");
+          return;
+        }
+
+        const makeForm = (blob, name) => {
+          const f = new FormData();
+          f.append("file", blob, name);
+          return f;
+        };
+
+        try {
+          const responses = await Promise.all(
+            validBlobs.map((blob, i) =>
+              fetch("/api/ocr", { method: "POST", body: makeForm(blob, `region_${i}.jpg`) }),
+            ),
+          );
+
+          const texts = await Promise.all(
+            responses.map(async (res) => {
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.detail);
+              return data.text;
+            }),
+          );
+
+          const pageText = texts.join("\n\n");
+          if (state.appendingPage) {
+            state.ocrText = state.ocrText + "\n\n--- page break ---\n\n" + pageText;
+            state.appendingPage = false;
+          } else {
+            state.ocrText = pageText;
+          }
+          document.getElementById("ocrText").value = state.ocrText;
+          msgEl.innerHTML = "";
+          setStep(2);
+          showPanel("review");
+        } catch (e) {
+          showMsg(msgEl, "error", `Zones OCR failed: ${e.message}`);
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────
       // AI Vision (skip OCR entirely)
       // ─────────────────────────────────────────────────────────────
       async function runVisionDirect() {
@@ -1971,10 +2546,16 @@
         cropStart = null;
         cropEnd = null;
         splitX = 0.5;
+        detectedRegions = [];
+        regionsMode = false;
+        resetRegionInteractionState();
         document.getElementById("scanPreview").style.display = "none";
         document.getElementById("columnSplitter").style.display = "none";
+        document.getElementById("regionsPanel").style.display = "none";
         const colBtn = document.getElementById("columnToggleBtn");
         if (colBtn) { colBtn.textContent = "📏 Columns"; colBtn.style.color = ""; }
+        const regBtn = document.getElementById("regionsBtn");
+        if (regBtn) { regBtn.textContent = "🔲 Regions"; regBtn.style.color = ""; }
         document.getElementById("reviewMsg").innerHTML = "";
         const vBtn = document.getElementById("visionBtn");
         if (vBtn) { vBtn.disabled = false; vBtn.textContent = "⚡ AI Vision"; }
